@@ -1,0 +1,46 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "record": "500000"
+      }
+    },
+    "content": [
+      {
+        "reader": {
+          "name": "sqlserverreader",
+          "parameter": {
+            "username": "dmp",
+            "password": "Bigdata2017",
+            "connection": [
+              {
+                "querySql": [
+                  "SELECT CID,VID,TESTITEM_ID,TESTITEM_FT,TESTITEM_NAME_C,RESULTS,UNIT,NORMAL_L,NORMAL_H FROM lis_test_result"
+                ],
+                "jdbcUrl": [
+                  "jdbc:sqlserver://192.168.16.5:1433;DatabaseName=health100"
+                ]
+              }
+            ]
+          }
+        },
+        "writer": {
+          "name": "mysqlwriter",
+          "parameter": {
+            "column": ["cid","vid","item_id","item_ft","item_name","results","unit","normal_l","normal_h"],
+            "connection": [
+              {
+                "jdbcUrl": "jdbc:mysql://127.0.0.1:3306/test?useUnicode=true&characterEncoding=UTF-8",
+                "table": ["lis_test_result"]
+              }
+            ],
+            "password": "123456",
+            "preSql": ["truncate table lis_test_result"],
+            "username": "root",
+            "writeMode": "insert"
+          }
+        }
+      }
+    ]
+  }
+}

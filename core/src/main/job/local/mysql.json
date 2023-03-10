@@ -1,0 +1,67 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                 "channel": 10
+            },
+            "errorLimit": {
+                "record": 0,
+                "percentage": 0.02
+            }
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "sinohealthmysqlreader",
+                    "parameter": {
+                        "username": "root",
+                        "password": "root",
+                        "column": [
+                            "id",
+                            "name"
+                        ],
+                        "connection": [
+                            {
+                                "table": [
+                                    "test_table"
+                                ],
+                                "jdbcUrl": [
+     "jdbc:mysql://127.0.0.1:3306/datax_web"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "writer": {
+                    "name": "sinohealthmysqlwriter",
+                    "parameter": {
+                        "writeMode": "insert",
+                        "username": "root",
+                        "password": "root",
+                        "column": [
+                            "id",
+                            "name"
+                        ],
+                        "session": [
+                        	"set session sql_mode='ANSI'"
+                        ],
+						"preSql": [
+                            "delete from data"
+                        ],
+						"sourceClass": "LisTestResultS",
+						"targetClass": "LisTestResultT",
+						"processorClass": "LisTestResultProcessor",
+                        "connection": [
+                            {
+                                "jdbcUrl": "jdbc:mysql://127.0.0.1:3306/datax?useUnicode=true&characterEncoding=gbk",
+                                "table": [
+                                    "data"
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    }
+}

@@ -1,0 +1,54 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "channel": 10
+      }
+    },
+    "content": [
+      {
+        "reader": {
+          "name": "sqlserverreader",
+          "parameter": {
+            "username": "sa",
+            "password": "Zk2025^^",
+            "sourceClass": "LisTestResultS",
+            "connection": [
+              {
+                "querySqlTemplate": "SELECT b.cid,b.vid,b.testitem_id,b.testitem_ft,b.testitem_name_c,b.results,b.normal_l,b.normal_h,unit,v.yysj FROM %s b LEFT JOIN view_yyqkb v ON b.vid = v.vid",
+                "table": [
+                  "lis_test_result201801",
+                  "lis_test_result201802",
+                  "lis_test_result201803",
+                  "lis_test_result201804",
+                  "lis_test_result201805"
+                ],
+                "jdbcUrl": [
+                  "jdbc:sqlserver://192.168.16.100:1433;DatabaseName=health100_source"
+                ]
+              }
+            ]
+          }
+        },
+        "writer": {
+          "name": "sinohealthmysqlwriter",
+          "parameter": {
+            "connection": [
+              {
+                "jdbcUrl": "jdbc:mysql://127.0.0.1:8066/Health100?rewriteBatchedStatements=true&useUnicode=true&characterEncoding=utf-8&useSSL=false"
+              }
+            ],
+            "password": "123456",
+            "username": "root",
+            "batchSize": "3000",
+            "batchByteSize": "536870912",
+            "sourceClass": "LisTestResultS",
+            "targetClass": "LisTestResultT",
+            "processorClass": "LisTestResultProcessor",
+            "writeMode": "insert"
+          }
+        }
+      }
+    ]
+  }
+}

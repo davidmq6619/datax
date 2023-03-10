@@ -1,0 +1,46 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "record": "500000"
+      }
+    },
+    "content": [
+      {
+        "reader": {
+          "name": "sqlserverreader",
+          "parameter": {
+            "username": "sa",
+            "password": "Zk2025^^",
+            "column": ["CID","VID","SAMPLEID","APPARATUSID","LABSEQUENCENO","TESTITEM_ID","TESTITEM_NAME_E","TESTITEM_NAME_C","TESTITEM_SHORT","RESULTS","UNIT","FLAG_LOG_FILTER","REC_LOG_FILTER","FLAG_QC_FILTER","REC_QC_FILTER","FLAG_REDO","FLAG_DO_MORE","REC_DO_MORE","NORMAL_L","NORMAL_H","DLMS","SXH","ABNORMAL","XH","TRANS_STATUS","TESTITEM_FT","BZ","czsj"],
+            "connection": [
+              {
+                "table": [
+                  "lis_test_result201806"
+                ],
+                "jdbcUrl": [
+                  "jdbc:sqlserver://192.168.16.100:1433;DatabaseName=health100_source"
+                ]
+              }
+            ]
+          }
+        },
+        "writer": {
+          "name": "mysqlwriter",
+          "parameter": {
+            "column": ["CID","VID","SAMPLEID","APPARATUSID","LABSEQUENCENO","TESTITEM_ID","TESTITEM_NAME_E","TESTITEM_NAME_C","TESTITEM_SHORT","RESULTS","UNIT","FLAG_LOG_FILTER","REC_LOG_FILTER","FLAG_QC_FILTER","REC_QC_FILTER","FLAG_REDO","FLAG_DO_MORE","REC_DO_MORE","NORMAL_L","NORMAL_H","DLMS","SXH","ABNORMAL","XH","TRANS_STATUS","TESTITEM_FT","BZ","czsj"],
+            "connection": [
+              {
+                "jdbcUrl": "jdbc:mysql://192.168.16.50:3000/prescription?useUnicode=true&characterEncoding=UTF-8",
+                "table": ["lis_test_result201806"]
+              }
+            ],
+            "password": "BigData2017!",
+            "username": "root",
+            "writeMode": "insert"
+          }
+        }
+      }
+    ]
+  }
+}

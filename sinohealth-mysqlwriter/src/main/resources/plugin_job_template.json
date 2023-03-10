@@ -1,0 +1,24 @@
+{
+    "name": "sinohealthmysqlwriter",
+    "parameter": {
+        "username": "",
+        "password": "",
+        "writeMode": "",
+        "sourceClass": "",
+        "targetClass": "",
+        "processorClass": "",
+        "batchByteSize": "",
+        "column": [],
+        "session": [],
+        "preSql": [],
+        "connection": [
+            {
+                "jdbcUrl": "",
+                "table": []
+            }
+        ],
+        "initDataDbUrl": "",
+        "initDataDbUser": "",
+        "initDataDbPassword": ""
+    }
+}

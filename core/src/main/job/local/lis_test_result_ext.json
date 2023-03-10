@@ -1,0 +1,54 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "record": "500000"
+      }
+    },
+    "content": [
+      {
+        "reader": {
+          "name": "sqlserverreader",
+          "parameter": {
+            "username": "dmp_demo",
+            "password": "ZKdmp2018!!",
+            "connection": [
+              {
+                "querySql": [
+                  "SELECT b.cid,b.cid1,b.vid,b.vid1,b.testitem_id,b.testitem_id1,b.testitem_ft,b.testitem_ft1,b.testitem_name_c,b.testitem_name_c1,b.results,b.results1,b.normal_l,b.normal_l1,b.normal_h,b.normal_h1,b.unit,b.unit1,v.yysj,v.yysj as yysj1 FROM lis_test_result_ext b LEFT JOIN view_yyqkb v ON b.vid = v.vid"
+                ],
+                "jdbcUrl": [
+                  "jdbc:sqlserver://192.168.16.5:1433;DatabaseName=health100_demo"
+                ]
+              }
+            ]
+          }
+        },
+        "writer": {
+          "name": "sinohealthmysqlwriter",
+          "parameter": {
+            "connection": [
+              {
+                "jdbcUrl": "jdbc:mysql://127.0.0.1:3306/test?useUnicode=true&characterEncoding=UTF-8"
+              }
+            ],
+            "password": "123456",
+            "preSql": [
+              "truncate table lis_test_result_ext"
+            ],
+            "username": "root",
+            "batchSize": "5000",
+            "batchByteSize": "536870912",
+            "sourceClass": "LisTestResultExtS",
+            "targetClass": "LisTestResultExt",
+            "processorClass": "LisTestResultExtProcessor",
+            "writeMode": "insert",
+            "initDataDbUrl": "jdbc:mysql://192.168.16.50:3000/health100_source?rewriteBatchedStatements=true&useUnicode=true&characterEncoding=utf-8",
+            "initDataDbUser": "root",
+            "initDataDbPassword": "BigData2017!"
+          }
+        }
+      }
+    ]
+  }
+}

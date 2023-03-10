@@ -1,0 +1,65 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "record": "500000"
+      }
+    },
+    "content": [
+      {
+        "reader": {
+          "name": "sinohealthmysqlreader",
+          "parameter": {
+            "username": "root",
+            "password": "zk2025",
+            "sourceClass": "DiagnoseResultDetailS",
+            "targetClass": "DiagnoseResultDetailTList",
+            "processorClass": "DiagnoseResultDetailProcessor2",
+            "initDataDbUrl": "jdbc:mysql://192.168.16.57:8066/Health100?rewriteBatchedStatements=true&useUnicode=true&characterEncoding=utf-8&useSSL=false",
+            "initDataDbUser": "root",
+            "initDataDbPassword": "123456",
+            "connection": [
+              {
+                "querySqlTemplate": "select id,vid,diagnose_result,check_time,book_time from %s where clean_status = 1",
+                "table": [
+                  "biz_diagnose_result"
+                ],
+                "jdbcUrl": [
+                  "jdbc:mysql://192.168.16.101:3000/health100_source201808?rewriteBatchedStatements=true&useUnicode=true&characterEncoding=utf-8&useSSL=false"
+                ]
+              }
+            ]
+          }
+        },
+        "writer": {
+          "name": "mysqlwriter",
+          "parameter": {
+            "column": [
+              "id",
+              "result_id",
+              "vid",
+              "diagnose_result",
+              "diagnose_result_comm",
+              "question_type",
+              "check_time",
+              "book_time"
+            ],
+            "connection": [
+              {
+                "jdbcUrl": "jdbc:mysql://192.168.16.101:3000/health100_source201808?rewriteBatchedStatements=true&useUnicode=true&characterEncoding=utf-8&useSSL=false",
+                "table": [
+                  "biz_diagnose_result_detail"
+                ]
+              }
+            ],
+            "password": "zk2025",
+            "username": "root",
+            "batchSize": "10000",
+            "batchByteSize": "536870912",
+            "writeMode": "insert"
+          }
+        }
+      }
+    ]
+  }
+}

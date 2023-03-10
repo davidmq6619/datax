@@ -1,0 +1,54 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "record": "500000"
+      }
+    },
+    "content": [
+      {
+        "reader": {
+          "name": "sqlserverreader",
+          "parameter": {
+            "username": "dmp_demo",
+            "password": "ZKdmp2018!!",
+            "connection": [
+              {
+                "querySql": [
+                  "select top 100000 vid,cid,dwdm,yysj,yydjr,yydjsj,jjzh,status,qtdjr,qtdjsj,tjsj,tjzzsj,member_type,print_time,cust_name,cust_xb,cust_csrq,cust_zy,cust_gzhy,bz_bm1,bz_bm2,bz_sfzhm from view_yyqkb"
+                ],
+                "jdbcUrl": [
+                  "jdbc:sqlserver://192.168.16.5:1433;DatabaseName=health100_demo"
+                ]
+              }
+            ]
+          }
+        },
+        "writer": {
+          "name": "sinohealthmysqlwriter",
+          "parameter": {
+            "connection": [
+              {
+                "jdbcUrl": "jdbc:mysql://192.168.16.50:3000/zeai?rewriteBatchedStatements=true&useUnicode=true&characterEncoding=utf-8"
+              }
+            ],
+            "password": "BigData2017!",
+            "preSql": [
+              "truncate table biz_reg_customer"
+            ],
+            "username": "root",
+            "batchSize": "5000",
+            "batchByteSize": "536870912",
+            "sourceClass": "RegCustomerS",
+            "targetClass": "RegCustomerT",
+            "processorClass": "RegCustomerProcessor",
+            "writeMode": "insert",
+            "initDataDbUrl": "jdbc:mysql://192.168.16.50:3000/health100_source?rewriteBatchedStatements=true&useUnicode=true&characterEncoding=utf-8",
+            "initDataDbUser": "root",
+            "initDataDbPassword": "BigData2017!"
+          }
+        }
+      }
+    ]
+  }
+}

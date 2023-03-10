@@ -1,0 +1,61 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "channel": 24
+      }
+    },
+    "content": [
+      {
+        "reader": {
+          "name": "sqlserverreader",
+          "parameter": {
+            "username": "sa",
+            "password": "Zk2025^^",
+            "sourceClass": "PacsCheckResultS",
+            "connection": [
+              {
+                "querySqlTemplate": "SELECT b.vid,b.cid,b.item_id,b.field_comment,b.field_results,b.zcz_xx,b.zcz_sx,b.dw,b.init_results,b.in_factory,b.op_datetime,v.yysj FROM %s b LEFT JOIN view_yyqkb v ON b.vid = v.vid",
+                "table": [
+                  "jj_comm_jc_result201701",
+                  "jj_comm_jc_result201702",
+                  "jj_comm_jc_result201703",
+                  "jj_comm_jc_result201704",
+                  "jj_comm_jc_result201705",
+                  "jj_comm_jc_result201706",
+                  "jj_comm_jc_result201707",
+                  "jj_comm_jc_result201708",
+                  "jj_comm_jc_result201709",
+                  "jj_comm_jc_result201710",
+                  "jj_comm_jc_result201711",
+                  "jj_comm_jc_result201712"
+                ],
+                "jdbcUrl": [
+                  "jdbc:sqlserver://192.168.16.100:1433;DatabaseName=health100_source"
+                ]
+              }
+            ]
+          }
+        },
+        "writer": {
+          "name": "sinohealthmysqlwriter",
+          "parameter": {
+            "connection": [
+              {
+                "jdbcUrl": "jdbc:mysql://127.0.0.1:8066/Health100?rewriteBatchedStatements=true&useUnicode=true&characterEncoding=utf-8&useSSL=false"
+              }
+            ],
+            "password": "123456",
+            "username": "root",
+            "batchSize": "2000",
+            "batchByteSize": "536870912",
+            "sourceClass": "PacsCheckResultS",
+            "targetClass": "PacsCheckResultT",
+            "processorClass": "PacsCheckResultProcessor",
+            "writeMode": "insert"
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "record": "500000"
+      }
+    },
+    "content": [
+      {
+        "reader": {
+          "name": "sqlserverreader",
+          "parameter": {
+            "username": "dmp",
+            "password": "Bigdata2017",
+            "connection": [
+              {
+                "querySql": [
+                  "SELECT TOP 1000000 vid,cid,item_id,field_comment,field_results,zcz_xx,zcz_sx,dw,init_results,in_factory,op_datetime FROM jj_comm_jc_result201612"
+                ],
+                "jdbcUrl": [
+                  "jdbc:sqlserver://192.168.16.5:1433;DatabaseName=health100"
+                ]
+              }
+            ]
+          }
+        },
+        "writer": {
+          "name": "mysqlwriter",
+          "parameter": {
+            "column": ["cid","vid","item_id","item_name","results","normal_l","normal_h","unit","init_result","in_factory","create_time"],
+            "connection": [
+              {
+                "table": ["pacs_check_result"],
+                "jdbcUrl": "jdbc:mysql://192.168.16.50:3000/zeai?rewriteBatchedStatements=true&useUnicode=true&characterEncoding=utf-8"
+              }
+            ],
+            "password": "BigData2017!",
+            "preSql": [
+              "truncate table pacs_check_result"
+            ],
+            "username": "root",
+            "batchSize": "5000",
+            "batchByteSize": "536870912",
+            "writeMode": "insert"
+          }
+        }
+      }
+    ]
+  }
+}

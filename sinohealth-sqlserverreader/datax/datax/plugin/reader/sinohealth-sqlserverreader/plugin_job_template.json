@@ -1,0 +1,19 @@
+{
+    "name": "sinohealth-sqlserverreader",
+    "parameter": {
+        "username": "",
+        "password": "",
+        "sourceClass": "",
+        "targetClass": "",
+        "processorClass": "",
+        "connection": [
+            {
+                "table": [],
+                "jdbcUrl": []
+            }
+        ],
+        "initDataDbUrl": "",
+        "initDataDbUser": "",
+        "initDataDbPassword": ""
+    }
+}
