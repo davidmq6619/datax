@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  * @author mingqiang
  * @date 2022/08/29
  **/
-public class CheckResultEtlProcessor implements Processor<RegCheck, StandardCheckRecordList> {
+public class CheckResultEtlProcessor implements Processor<BasCheck, StandardCheckRecordList> {
     public static final Logger LOG = LoggerFactory.getLogger(CheckResultEtlProcessor.class);
     //只需要结果，不需要离散型
     private static final List<String> CHECK_RESULT_DATA = Arrays.asList("体重指数", "身高", "体重", "骨密度检测");
@@ -30,7 +30,7 @@ public class CheckResultEtlProcessor implements Processor<RegCheck, StandardChec
     public final static String regx = "([1-9]\\d*\\.?\\d*)|(0\\.\\d*[1-9])";
 
     @Override
-    public StandardCheckRecordList dataProcess(RegCheck check, StandardCheckRecordList checkList, CommonData commonData) {
+    public StandardCheckRecordList dataProcess(BasCheck check, StandardCheckRecordList checkList, CommonData commonData) {
         StandardCheckRecordList recordList = new StandardCheckRecordList();
         List<StandardCheckRecord> listRecord = new ArrayList<>();
         StandardCheckRecord checkRecord = new StandardCheckRecord();
@@ -40,11 +40,15 @@ public class CheckResultEtlProcessor implements Processor<RegCheck, StandardChec
         checkRecord.setItemUnit(check.getUnit());
         checkRecord.setCleanTime(new Date());
         checkRecord.setVid(check.getVid());
-        checkRecord.setClassName(check.getItemFt());
+        checkRecord.setClassName(check.getClassName());
         checkRecord.setCleanStatus(1);
-        checkRecord.setResultsDiscrete("0");
-        checkRecord.setNormalH(check.getNormalH());
-        checkRecord.setNormalL(check.getNormalL());
+        checkRecord.setResultsDiscrete(0);
+        checkRecord.setNormalL(check.getReference());
+        checkRecord.setReportTime(check.getReportTime());
+        checkRecord.setOrgId(EtlSTConst.orgId);
+        checkRecord.setStoreId(EtlSTConst.storeId);
+        checkRecord.setCleanStatus(EtlStatus.ETL_DATA.getCode());
+        checkRecord.setRemark(EtlStatus.ETL_DATA.getMessage());
         try {
             if (StrUtil.isBlank(checkRecord.getClassName())) {
                 checkRecord.setCleanStatus(EtlStatus.ETL_ERROR.getCode());
@@ -77,73 +81,122 @@ public class CheckResultEtlProcessor implements Processor<RegCheck, StandardChec
                 recordList.setList(listRecord);
                 return recordList;
             }
-            if(checkRecord.getItemName().contains("体重指数") || checkRecord.getItemNameComn().equals("收缩压") || checkRecord.getItemNameComn().equals("舒张压")){
-            if(checkRecord.getItemName().contains("体重指数")){
-                itemName = checkRecord.getItemName();
-                itemName = itemName.replace("--", "-").replace("-","~");
-                if(itemName.contains("-")){
-                    String  temp=itemName.replace("体重指数", "").replace("(", "").replace("（", "").replace("）", "").replace(")", "").trim();
-                    String[] str= temp.split("-");
-                    if(str!=null&&str.length>=2) {
-                        checkRecord.setNormalL(str[0]);
-                        checkRecord.setNormalH(str[1]);
-                    }
-                }else if(StrUtil.isNotBlank(checkRecord.getNormalL()) && (checkRecord.getNormalL().contains("-") || checkRecord.getNormalL().contains("--") ||
-                        checkRecord.getNormalL().contains("~"))){
-                    String normal = checkRecord.getNormalL().replace("--", "-").replace("~","-");
-                    String[] str= normal.split("-");
-                    if(str!=null&&str.length>=2) {
-                        checkRecord.setNormalL(str[0]);
-                        checkRecord.setNormalH(str[1]);
-                    }
-                }
-            }else if(checkRecord.getItemNameComn().equals("收缩压")) {
-                if( StrUtil.isNotBlank(checkRecord.getNormalL()) && (checkRecord.getNormalL().contains("-") || checkRecord.getNormalL().contains("--") ||
-                        checkRecord.getNormalL().contains("~"))){
-                    String normal = checkRecord.getNormalL().replace("--", "-").replace("~","-");
-                    String[] str= normal.split("-");
-                    if(str!=null&&str.length>=2) {
-                        checkRecord.setNormalL(str[0]);
-                        checkRecord.setNormalH(str[1]);
-                    }
-                }else{
-                    if(StringUtils.isBlank(checkRecord.getNormalL())) {
-                        checkRecord.setNormalL("90");
-                    }
-                    if(StringUtils.isBlank(checkRecord.getNormalH())) {
-                        checkRecord.setNormalH("140");
-                    }else {
-                        if(checkRecord.getItemUnit() != null){
-                            checkRecord.setNormalH(checkRecord.getNormalH().replace(checkRecord.getItemUnit(), "").trim());
+            if (StrUtil.isBlank(check.getImageDiagnose())) {
+                if (checkRecord.getItemName().contains(EtlConst.BMI) || checkRecord.getItemNameComn().equals("收缩压") || checkRecord.getItemNameComn().equals("舒张压") || checkRecord.getItemNameComn().equals("身高") || checkRecord.getItemNameComn().equals("体重")) {
+                    if (checkRecord.getItemName().contains("体重指数")) {
+                        itemName = checkRecord.getItemName();
+                        itemName = itemName.replace("--", "-").replace("-", "~");
+                        if (itemName.contains("-")) {
+                            String temp = itemName.replace(EtlConst.BMI, "").replace("(", "").replace("（", "").replace("）", "").replace(")", "").trim();
+                            String[] str = temp.split("-");
+                            if (str != null && str.length >= 2) {
+                                checkRecord.setNormalL(str[0]);
+                                checkRecord.setNormalH(str[1]);
+                            }
+                        } else if (StrUtil.isNotBlank(checkRecord.getNormalL()) && (checkRecord.getNormalL().contains("-") || checkRecord.getNormalL().contains("--") ||
+                                checkRecord.getNormalL().contains("~"))) {
+                            String normal = checkRecord.getNormalL().replace("--", "-").replace("~", "-");
+                            String[] str = normal.split("-");
+                            if (str != null && str.length >= 2) {
+                                checkRecord.setNormalL(str[0]);
+                                checkRecord.setNormalH(str[1]);
+                            }
+                        }
+                    } else if (checkRecord.getItemNameComn().equals("收缩压")) {
+                        if (StrUtil.isNotBlank(checkRecord.getNormalL()) && (checkRecord.getNormalL().contains("-") || checkRecord.getNormalL().contains("--") ||
+                                checkRecord.getNormalL().contains("~"))) {
+                            String normal = checkRecord.getNormalL().replace("--", "-").replace("~", "-");
+                            String[] str = normal.split("-");
+                            if (str != null && str.length >= 2) {
+                                checkRecord.setNormalL(str[0]);
+                                checkRecord.setNormalH(str[1]);
+                            }
+                        } else {
+                            if (StringUtils.isBlank(checkRecord.getNormalL())) {
+                                checkRecord.setNormalL("90");
+                            }
+                            if (StringUtils.isBlank(checkRecord.getNormalH())) {
+                                checkRecord.setNormalH("140");
+                            } else {
+                                if (checkRecord.getItemUnit() != null) {
+                                    checkRecord.setNormalH(checkRecord.getNormalH().replace(checkRecord.getItemUnit(), "").trim());
+                                }
+                            }
+                        }
+                    } else if (checkRecord.getItemNameComn().equals("舒张压")) {
+                        if (StrUtil.isNotBlank(checkRecord.getNormalL()) && (checkRecord.getNormalL().contains("-") || checkRecord.getNormalL().contains("--") ||
+                                checkRecord.getNormalL().contains("~"))) {
+                            String normal = checkRecord.getNormalL().replace("--", "-").replace("~", "-");
+                            String[] str = normal.split("-");
+                            if (str != null && str.length >= 2) {
+                                checkRecord.setNormalL(str[0]);
+                                checkRecord.setNormalH(str[1]);
+                            }
+                        } else {
+                            if (StringUtils.isBlank(checkRecord.getNormalL())) {
+                                checkRecord.setNormalL("60");
+                            }
+                            if (StringUtils.isBlank(checkRecord.getNormalH())) {
+                                checkRecord.setNormalH("90");
+                            } else {
+                                if (checkRecord.getItemUnit() != null) {
+                                    checkRecord.setNormalH(checkRecord.getNormalH().replace(checkRecord.getItemUnit(), "").trim());
+                                }
+                            }
+                        }
+                    }else if("身高".equals(checkRecord.getItemNameComn()) && StrUtil.isNotBlank(check.getSummary())){
+                        //体重指数处理
+                        String summary = check.getSummary();
+                        String[] splitStrings = TextTrimUtils.splitSignsToArrByParam(summary, ";；。, ，");
+                        //舒张压：44 ↓；您的体重指数为21.23,属于标准体重范围46.2～59.9Kg;
+                        String hitStr = "";
+                        for (String s : splitStrings) {
+                            if(s.contains(EtlConst.BMI)){
+                                hitStr =  s;
+                                break;
+                            }
+                        }
+                        if(StrUtil.isNotBlank(hitStr)){
+                            List<String> list = ReUtil.findAll(EtlConst.regx, hitStr, 0);
+                            if(!list.isEmpty()){
+                                list.sort(Comparator.comparing(Double::valueOf));
+                                String s = list.get(list.size() - 1);
+                                StandardCheckRecord checkRecordBMI = new StandardCheckRecord();
+                                checkRecordBMI.setItemName(EtlConst.BMI);
+                                checkRecordBMI.setItemNameComn(EtlConst.BMI);
+                                checkRecordBMI.setItemNameComn(EtlConst.BMI);
+                                checkRecordBMI.setItemResults(s);
+                                checkRecordBMI.setItemUnit(check.getUnit());
+                                checkRecordBMI.setCleanTime(new Date());
+                                checkRecordBMI.setVid(check.getVid());
+                                checkRecordBMI.setClassName(EtlConst.YBJC);
+                                checkRecordBMI.setCleanStatus(1);
+                                checkRecordBMI.setNormalL("18.5");
+                                checkRecordBMI.setNormalH("24");
+                                checkRecordBMI.setReportTime(check.getReportTime());
+                                checkRecordBMI.setOrgId(EtlSTConst.orgId);
+                                checkRecordBMI.setStoreId(EtlSTConst.storeId);
+                                checkRecordBMI.setCleanStatus(EtlStatus.ETL_SUCCESS.getCode());
+                                checkRecordBMI.setRemark(EtlStatus.ETL_SUCCESS.getMessage());
+                                checkRecordBMI.setSwitchResult(s);
+                                checkRecordBMI.setSwitchUnit("kg/m^2");
+                                resultsDiscreteProcess(checkRecordBMI, commonData);
+                                listRecord.add(checkRecordBMI);
+                            }
                         }
                     }
                 }
-            }else if(checkRecord.getItemNameComn().equals("舒张压")) {
-                if (StrUtil.isNotBlank(checkRecord.getNormalL()) && (checkRecord.getNormalL().contains("-") || checkRecord.getNormalL().contains("--") ||
-                        checkRecord.getNormalL().contains("~"))) {
-                    String normal = checkRecord.getNormalL().replace("--", "-").replace("~", "-");
-                    String[] str = normal.split("-");
-                    if (str != null && str.length >= 2) {
-                        checkRecord.setNormalL(str[0]);
-                        checkRecord.setNormalH(str[1]);
-                    }
-                } else {
-                    if (StringUtils.isBlank(checkRecord.getNormalL())) {
-                        checkRecord.setNormalL("60");
-                    }
-                    if (StringUtils.isBlank(checkRecord.getNormalH())) {
-                        checkRecord.setNormalH("90");
-                    } else {
-                        if (checkRecord.getItemUnit() != null) {
-                            checkRecord.setNormalH(checkRecord.getNormalH().replace(checkRecord.getItemUnit(), "").trim());
-                        }
-                    }
+                if(!results.contains("未检") && !results.contains("弃检")){
+                    checkRecord.setSwitchResult(results);
+                    checkRecord.setSwitchUnit(check.getUnit());
                 }
+                checkRecord.setCleanStatus(EtlStatus.ETL_SUCCESS.getCode());
+                checkRecord.setRemark(EtlStatus.ETL_SUCCESS.getMessage());
                 check.setResults(results);
                 checkRecord.setItemResults(results);
                 resultsDiscreteProcess(checkRecord, commonData);
                 listRecord.add(checkRecord);
-            }} else {
+            } else {
                 //三大结节处理
                 listRecord = checkHandler(checkRecord, commonData);
             }
@@ -161,65 +214,61 @@ public class CheckResultEtlProcessor implements Processor<RegCheck, StandardChec
             double normalL = Double.valueOf(str.getNormalL()).doubleValue();
             double normalH = Double.valueOf(str.getNormalH()).doubleValue();
 
-            if (str.getItemNameComn().equals("体重指数")) {
+            if ("体重指数".equals(str.getItemNameComn())) {
                 if (value <= normalH && value >= normalH * 0.9) {
-                    str.setResultsDiscrete("1"); // 临界高
+                    str.setResultsDiscrete(1); // 临界高
                     str.setItemResults("正常");
                 } else if (value >= normalL && value <= normalL * 1.1) {
-                    str.setResultsDiscrete("-1"); // 临界低
+                    str.setResultsDiscrete(-1); // 临界低
                     str.setItemResults("正常");
                 } else if (value > normalH) {
-                    str.setResultsDiscrete("2"); // 高
+                    str.setResultsDiscrete(2); // 高
                     if (value >= 28) {
                         str.setItemResults("肥胖");
                     } else {
                         str.setItemResults("超重");
                     }
                 } else if (value < normalL) {
-                    str.setResultsDiscrete("-2"); // 低
+                    str.setResultsDiscrete(-2); // 低
                     str.setItemResults("偏瘦");
                 } else {
-                    str.setResultsDiscrete("0"); // 正常
+                    str.setResultsDiscrete(0); // 正常
                     str.setItemResults("正常");
                 }
-            } else {
+            } else if ("收缩压".equals(str.getItemNameComn()) || "舒张压".equals(str.getItemNameComn())) {
                 if (value <= normalH && value >= normalH * 0.9) {
-                    str.setResultsDiscrete("1"); // 临界高
+                    str.setResultsDiscrete(1); // 临界高
                     str.setItemResults("正常");
                 } else if (value >= normalL && value <= normalL * 1.1) {
-                    str.setResultsDiscrete("-1"); // 临界低
+                    str.setResultsDiscrete(-1); // 临界低
                     str.setItemResults("正常");
                 } else if (value > normalH) {
-                    str.setResultsDiscrete("2"); // 高
+                    str.setResultsDiscrete(2); // 高
                     str.setItemResults("偏高");
-
                 } else if (value < normalL) {
-                    str.setResultsDiscrete("-2"); // 低
+                    str.setResultsDiscrete(-2); // 低
                     str.setItemResults("偏低");
                 } else {
-                    str.setResultsDiscrete("0"); // 正常
+                    str.setResultsDiscrete(0); // 正常
                     str.setItemResults("正常");
                 }
             }
             str.setCleanStatus(EtlStatus.ETL_SUCCESS.getCode());
             str.setRemark(EtlStatus.ETL_SUCCESS.getMessage());
-        } else {
-            str.setCleanStatus(EtlStatus.ETL_ERROR_DISPERSE.getCode());
-            str.setRemark(EtlStatus.ETL_ERROR_DISPERSE.getMessage());
         }
     }
 
     public List<StandardCheckRecord> checkHandler(StandardCheckRecord check, CommonData commonData) {
         List<StandardCheckRecord> temp = new ArrayList<>();
 
-            boolean levelFlag = false;
-            String results = check.getItemResults();
+        boolean levelFlag = false;
+        String results = check.getItemResults();
         if (check.getClassName().contains(EtlConst.ITEM_THYROID)) {
             try {
                 String result = check.getItemResults();
                 if (StringUtils.isNotBlank(result)) {
                     result = result.replaceAll("探及", "见");
-                    result= result.replaceAll(EtlConst.REGX_SENSITIVE, "******");
+                    result = result.replaceAll(EtlConst.REGX_SENSITIVE, "******");
                     //等级提取
                     if (!levelFlag) {
                         result = result.replace(" ", "");
@@ -259,6 +308,9 @@ public class CheckResultEtlProcessor implements Processor<RegCheck, StandardChec
                         pcr1.setCleanStatus(1);
                         pcr1.setImageDiagnose(check.getImageDiagnose());
                         pcr1.setImageDescribe(check.getItemResults());
+                        pcr1.setOrgId(EtlSTConst.orgId);
+                        pcr1.setStoreId(EtlSTConst.storeId);
+                        pcr1.setResultsDiscrete(2);
                         if (levelListTi != null && !levelListTi.isEmpty()) {
                             levelListTi.sort((x1, x2) -> x1.compareTo(x2));
                             String s = levelListTi.get(levelListTi.size() - 1);
@@ -280,20 +332,12 @@ public class CheckResultEtlProcessor implements Processor<RegCheck, StandardChec
                 for (String str9 : result.split(EtlConst.SPLIT_JUHAO)) {
                     for (String str8 : str9.split(EtlConst.SPLIT_FENHAO2)) {
                         for (String str2 : str8.split(EtlConst.SPLIT_JIAN)) {
-                            /*if (!str2.contains(EtlConst.ITEM_THYROID)) {
-                                continue;
-                            }*/
                             for (KeywordsLevelDto keyword : commonData.getKeywordsLevelList()) {
                                 boolean flag = false;
                                 for (String str3 : keyword.getKeywords()) {
-
                                     if (str2.contains(str3)) {
-                                        if (str3.equals("实性") && str2.contains("囊实性")) {
-                                            continue;
-                                        }
                                         if (level == 0 || level > keyword.getLevel()) {
                                             level = keyword.getLevel();
-
                                         }
                                         Map<String, Object> mapBy = new HashMap<>();
                                         mapBy.put("level", keyword.getLevel());
@@ -415,6 +459,9 @@ public class CheckResultEtlProcessor implements Processor<RegCheck, StandardChec
                         pcr1.setCleanStatus(1);
                         pcr1.setImageDiagnose(check.getImageDiagnose());
                         pcr1.setImageDescribe(check.getItemResults());
+                        pcr1.setOrgId(EtlSTConst.orgId);
+                        pcr1.setStoreId(EtlSTConst.storeId);
+                        pcr1.setResultsDiscrete(2);
                         temp.add(pcr1);
                     }
                     //结节类型
@@ -430,6 +477,9 @@ public class CheckResultEtlProcessor implements Processor<RegCheck, StandardChec
                         pcr2.setCleanStatus(1);
                         pcr2.setImageDiagnose(check.getImageDiagnose());
                         pcr2.setImageDescribe(check.getItemResults());
+                        pcr2.setOrgId(EtlSTConst.orgId);
+                        pcr2.setStoreId(EtlSTConst.storeId);
+                        pcr2.setResultsDiscrete(2);
                         temp.add(pcr2);
                     }
                     //最大结节直径
@@ -443,8 +493,11 @@ public class CheckResultEtlProcessor implements Processor<RegCheck, StandardChec
                         pcr3.setCleanTime(new Date());
                         pcr3.setItemResults(str5);
                         pcr3.setCleanStatus(1);
+                        pcr3.setOrgId(EtlSTConst.orgId);
+                        pcr3.setStoreId(EtlSTConst.storeId);
                         pcr3.setImageDiagnose(check.getImageDiagnose());
                         pcr3.setImageDescribe(check.getItemResults());
+                        pcr3.setResultsDiscrete(2);
                         if (str.contains("cm") || str.contains("CM") || str.contains("Cm") || str.contains("cM")) {
                             pcr3.setItemUnit("cm");
                             pcr3.setUnitComm("cm");
@@ -500,6 +553,9 @@ public class CheckResultEtlProcessor implements Processor<RegCheck, StandardChec
                 pcr1.setCleanStatus(1);
                 pcr1.setImageDiagnose(check.getImageDiagnose());
                 pcr1.setImageDescribe(check.getItemResults());
+                pcr1.setOrgId(EtlSTConst.orgId);
+                pcr1.setStoreId(EtlSTConst.storeId);
+                pcr1.setResultsDiscrete(2);
                 if (levelListTi != null && !levelListTi.isEmpty()) {
                     levelListTi.sort((x1, x2) -> x1.compareTo(x2));
                     String s = levelListTi.get(levelListTi.size() - 1);
@@ -559,6 +615,10 @@ public class CheckResultEtlProcessor implements Processor<RegCheck, StandardChec
                 pcr1.setItemNameComn(EtlConst.BI_RADSLEVEL);
                 pcr1.setInitResult(EtlConst.INIT_RESULT_2);
                 pcr1.setCleanStatus(1);
+                pcr1.setOrgId(EtlSTConst.orgId);
+                pcr1.setStoreId(EtlSTConst.storeId);
+                pcr1.setResultsDiscrete(2);
+                pcr1.setVid(check.getVid());
                 pcr1.setItemResults(s.replace("BI-RADS", "").replace("级", "").replace("类", "").trim());
                 temp.add(pcr1);
             }
@@ -577,12 +637,12 @@ public class CheckResultEtlProcessor implements Processor<RegCheck, StandardChec
                 }
                 boolean flagNormal = false;
                 for (String s : EtlConst.NORMAL_LIST) {
-                    if(str1.contains(s) && !flag7){
+                    if (str1.contains(s) && !flag7) {
                         flagNormal = true;
                         break;
                     }
                 }
-                if ((flagRu ||flagNormal)) {
+                if ((flagRu || flagNormal)) {
                     continue;
                 }
                 if (str1.contains(EtlConst.RU_KEY)) {
@@ -593,7 +653,7 @@ public class CheckResultEtlProcessor implements Processor<RegCheck, StandardChec
                         }
                     }
                 }
-                if(flag2){
+                if (flag2) {
                     break;
                 }
             }
@@ -604,6 +664,10 @@ public class CheckResultEtlProcessor implements Processor<RegCheck, StandardChec
                 pcr3.setInitResult(EtlConst.INIT_RESULT_2);
                 pcr3.setCleanStatus(1);
                 pcr3.setItemResults("1");
+                pcr3.setResultsDiscrete(2);
+                pcr3.setVid(check.getVid());
+                pcr3.setOrgId(EtlSTConst.orgId);
+                pcr3.setStoreId(EtlSTConst.storeId);
                 temp.add(pcr3);
             }
         }
@@ -618,41 +682,44 @@ public class CheckResultEtlProcessor implements Processor<RegCheck, StandardChec
         pcr1.setImageDescribe(check.getItemResults());
         pcr1.setImageDiagnose(check.getImageDiagnose());
         pcr1.setItemNameComn(check.getItemNameComn());
+        pcr1.setOrgId(EtlSTConst.orgId);
+        pcr1.setStoreId(EtlSTConst.storeId);
+        pcr1.setResultsDiscrete(0);
 
         if (temp.isEmpty()) {
             String result = check.getItemResults();
             boolean flagA = false;
             boolean flagB = false;
             boolean flagC = false;
-            for (String  s: EtlConst.NORMAL_LIST) {
-                if(result.contains(s)){
+            for (String s : EtlConst.NORMAL_LIST) {
+                if (result.contains(s)) {
                     flagA = true;
                     break;
                 }
             }
-            for (String  s: EtlConst.ETL_NOT_DOING) {
-                if(result.contains(s)){
+            for (String s : EtlConst.ETL_NOT_DOING) {
+                if (result.contains(s)) {
                     flagB = true;
                     break;
                 }
             }
-            for (String  s: EtlConst.ETL_SUSPICIOUS) {
-                if(result.contains(s)){
+            for (String s : EtlConst.ETL_SUSPICIOUS) {
+                if (result.contains(s)) {
                     flagC = true;
                     break;
                 }
             }
 
-            if(flagA){
+            if (flagA) {
                 pcr1.setRemark(EtlStatus.ETL_SUCCESS_NORMAL.getMessage());
                 pcr1.setCleanStatus(EtlStatus.ETL_SUCCESS_NORMAL.getCode());
-            }else if(flagB){
+            } else if (flagB) {
                 pcr1.setRemark(EtlStatus.ETL_NOT_DOING.getMessage());
                 pcr1.setCleanStatus(EtlStatus.ETL_NOT_DOING.getCode());
-            }else if(flagC){
+            } else if (flagC) {
                 pcr1.setRemark(EtlStatus.ETL_SUSPICIOUS.getMessage());
                 pcr1.setCleanStatus(EtlStatus.ETL_SUSPICIOUS.getCode());
-            }else{
+            } else {
                 pcr1.setRemark(EtlStatus.ETL_DATA.getMessage());
                 pcr1.setCleanStatus(EtlStatus.ETL_DATA.getCode());
             }

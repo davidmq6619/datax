@@ -45,10 +45,59 @@ public class StandardCheckRecord implements Serializable {
     @db_alias("image_diagnose")
     private String imageDiagnose;
     @db_alias("results_discrete")
-    private String resultsDiscrete;
+    private Integer resultsDiscrete;
+
+    @db_alias("report_time")
+    private Date reportTime;
+    @db_alias("org_id")
+    private String orgId;
+    @db_alias("store_id")
+    private String storeId;
+    @db_alias("switch_result")
+    private String switchResult;
+    @db_alias("switch_unit")
+    private String switchUnit;
 
 
+    public String getSwitchUnit() {
+        return switchUnit;
+    }
 
+    public void setSwitchUnit(String switchUnit) {
+        this.switchUnit = switchUnit;
+    }
+
+    public String getSwitchResult() {
+        return switchResult;
+    }
+
+    public void setSwitchResult(String switchResult) {
+        this.switchResult = switchResult;
+    }
+
+    public Date getReportTime() {
+        return reportTime;
+    }
+
+    public void setReportTime(Date reportTime) {
+        this.reportTime = reportTime;
+    }
+
+    public String getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(String orgId) {
+        this.orgId = orgId;
+    }
+
+    public String getStoreId() {
+        return storeId;
+    }
+
+    public void setStoreId(String storeId) {
+        this.storeId = storeId;
+    }
 
     public String getVid() {
         return vid;
@@ -178,11 +227,11 @@ public class StandardCheckRecord implements Serializable {
         this.imageDiagnose = imageDiagnose;
     }
 
-    public String getResultsDiscrete() {
+    public Integer getResultsDiscrete() {
         return resultsDiscrete;
     }
 
-    public void setResultsDiscrete(String resultsDiscrete) {
+    public void setResultsDiscrete(Integer resultsDiscrete) {
         this.resultsDiscrete = resultsDiscrete;
     }
 }

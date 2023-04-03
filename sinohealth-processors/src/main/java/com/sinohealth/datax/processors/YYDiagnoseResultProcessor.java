@@ -2,16 +2,19 @@ package com.sinohealth.datax.processors;
 
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.sinohealth.datax.common.CommonData;
 import com.sinohealth.datax.common.Processor;
 import com.sinohealth.datax.entity.common.BasInspectionKeyword;
 import com.sinohealth.datax.entity.common.BasItemAlias;
+import com.sinohealth.datax.entity.source.BasCheck;
 import com.sinohealth.datax.entity.source.RegCheck;
 import com.sinohealth.datax.entity.source.StandardDiagnoseRecord;
 import com.sinohealth.datax.entity.zktarget.StandardDiagnoseRecordList;
 import com.sinohealth.datax.utils.DocSimulateUtils;
 import com.sinohealth.datax.utils.EtlConst;
+import com.sinohealth.datax.utils.EtlSTConst;
 import com.sinohealth.datax.utils.TextUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -24,7 +27,7 @@ import java.util.stream.Collectors;
  * @author mingqiang
  * @date 20220905
  **/
-public class YYDiagnoseResultProcessor implements Processor<RegCheck, StandardDiagnoseRecordList> {
+public class YYDiagnoseResultProcessor implements Processor<BasCheck, StandardDiagnoseRecordList> {
 
     public static final Logger logger = LoggerFactory.getLogger(YYDiagnoseResultProcessor.class);
     private static final List<String> negativeWordList = Lists.newArrayList("无", "没有", "未见", "未发现", "弃查", "弃检", "趋势");
@@ -38,31 +41,37 @@ public class YYDiagnoseResultProcessor implements Processor<RegCheck, StandardDi
     public static final String defaultNameStr = "超声,MR,CT,DR,心电图,宫颈脱落细胞学检测";
 
     @Override
-    public StandardDiagnoseRecordList dataProcess(RegCheck check, StandardDiagnoseRecordList list, CommonData commonData) {
+    public StandardDiagnoseRecordList dataProcess(BasCheck check, StandardDiagnoseRecordList list, CommonData commonData) {
         ArrayList<StandardDiagnoseRecord> recordList = new ArrayList<>();
-        String summary = check.getResults();
-        if (StrUtil.isNotBlank(summary)) {
-            summary = summary.replaceAll("\\r\\n\\r\\n", "。");
-            summary = summary.replaceAll("\\r\\n", "。");
-            summary = summary.replaceAll("\\n", "。");
-        }
-        if (StrUtil.isNotBlank(summary)) {
-            summary = summary.replaceFirst("★", "");
-        } else {
-            summary = "超声、X线、CT、磁共振、红外线等影像医学检查结论已根据体检结果进行评估，相关图像资料，请参阅体检报告或至体检中心获取。";
+        String summary = StrUtil.isBlank(check.getImageDiagnose())?check.getResults():check.getImageDiagnose();
+        if (StrUtil.isBlank(summary)) {
+            logger.error("小结数据为空，入参数据{}", JSON.toJSONString(check));
+            StandardDiagnoseRecordList recordList1 = new StandardDiagnoseRecordList();
+            ArrayList<StandardDiagnoseRecord> records = new ArrayList<>();
+            StandardDiagnoseRecord record = new StandardDiagnoseRecord();
+            record.setStoreId(EtlSTConst.storeId);
+            record.setOrgId(EtlSTConst.orgId);
+            record.setReportTime(check.getReportTime());
+            record.setClassName(check.getClassName());
+            record.setVid(check.getVid());
+            record.setCleanTime(new Date());
+            record.setItemName(check.getItemName());
+            record.setResultsDiscrete(0);
+            record.setCleanStatus(0);
+            records.add(record);
+            recordList1.setList(records);
+            return recordList1;
         }
         summary = specialProcess4(summary);
         summary = summary.replaceAll(" ", "");
         inspectionKeywordList = commonData.getBasInspectionKeywordList();
         summary = summary.replace("*", "");
-        String[] summaryArr = summary.split("★");
-        for (String s : summaryArr) {
-            List<StandardDiagnoseRecord> standardDiagnoseRecords = logicJudgeInspection(s, commonData.getBasItemAliasList(), check);
-            if (standardDiagnoseRecords == null) {
-                standardDiagnoseRecords = new ArrayList<StandardDiagnoseRecord>();
-            }
-            recordList.addAll(standardDiagnoseRecords);
+        List<StandardDiagnoseRecord> standardDiagnoseRecords = logicJudgeInspection(summary, commonData.getBasItemAliasList(), check);
+        if (standardDiagnoseRecords == null) {
+            standardDiagnoseRecords = new ArrayList<>();
         }
+        recordList.addAll(standardDiagnoseRecords);
+
         //对于相同疾病去重处理
         Map<String, List<StandardDiagnoseRecord>> showNameMap = recordList.stream().collect(Collectors.groupingBy(StandardDiagnoseRecord::getItemName));
         for (String showName : showNameMap.keySet()) {
@@ -85,7 +94,7 @@ public class YYDiagnoseResultProcessor implements Processor<RegCheck, StandardDi
         list.setList(recordList);
         return list;
     }
-    private List<StandardDiagnoseRecord> logicJudgeInspection(String inspectionItem, List<BasItemAlias> allItemAlias, RegCheck check) {
+    private List<StandardDiagnoseRecord> logicJudgeInspection(String inspectionItem, List<BasItemAlias> allItemAlias, BasCheck check) {
         /**
          * -1、先判断该总结项中是否含有冒号，不含冒号的选项，不做处理，直接跳过 0、 先根据冒号切断，取第一个项目别名，
          * 根据项目别名查询base_item_alias匹配项目名，再根据项目名查询base_inspection_keyword
@@ -198,7 +207,7 @@ public class YYDiagnoseResultProcessor implements Processor<RegCheck, StandardDi
         return records;
     }
 
-    private  List<StandardDiagnoseRecord> preProcessItemResult(String itemName, String itemResults, RegCheck check) {
+    private  List<StandardDiagnoseRecord> preProcessItemResult(String itemName, String itemResults, BasCheck check) {
 
         StandardDiagnoseRecordList recordList = new StandardDiagnoseRecordList();
         ArrayList<StandardDiagnoseRecord> list = new ArrayList<>();
@@ -320,7 +329,7 @@ public class YYDiagnoseResultProcessor implements Processor<RegCheck, StandardDi
 
 
 
-    private List<StandardDiagnoseRecord> addRelateDisease(String itemName, String clause, RegCheck check) {
+    private List<StandardDiagnoseRecord> addRelateDisease(String itemName, String clause, BasCheck check) {
         List<BasInspectionKeyword> mostSimuList = new ArrayList<>();
         List<StandardDiagnoseRecord> list = new ArrayList<>();
         if (StringUtils.isNotBlank(clause) && inspectionKeywordList != null) {
@@ -376,6 +385,11 @@ public class YYDiagnoseResultProcessor implements Processor<RegCheck, StandardDi
                 record.setCleanTime(new Date());
                 record.setItemId(inspectionKeyword.getId().toString());
                 record.setClassName(itemName);
+                record.setResultsDiscrete(2);
+                record.setOrgId(EtlSTConst.orgId);
+                record.setStoreId(EtlSTConst.storeId);
+                record.setReportTime(check.getReportTime());
+                record.setImageDiagnose(check.getImageDiagnose());
                 list.add(record);
             }
         }

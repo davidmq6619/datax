@@ -28,6 +28,7 @@ import com.sinohealth.datax.plugin.rdbms.init.BizDataIniter;
 import com.sinohealth.datax.reflection.Reflector;
 import com.sinohealth.datax.reflection.factory.DefaultObjectFactory;
 import com.sinohealth.datax.reflection.factory.ObjectFactory;
+import com.sinohealth.datax.utils.EtlSTConst;
 import com.sinohealth.datax.utils.ReflectUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -164,7 +165,8 @@ public class SinohealthRdbmsReader {
             this.initDataDbUrl = readerSliceConfig.getString(com.alibaba.datax.plugin.rdbms.writer.Key.INIT_DATA_DB_URL);
             this.initDataDbUser = readerSliceConfig.getString(com.alibaba.datax.plugin.rdbms.writer.Key.INIT_DATA_DB_USER);
             this.initDataDbPassword = readerSliceConfig.getString(com.alibaba.datax.plugin.rdbms.writer.Key.INIT_DATA_DB_PASSWORD);
-
+            EtlSTConst.orgId = readerSliceConfig.getString(com.alibaba.datax.plugin.rdbms.writer.Key.ORG_ID);
+            EtlSTConst.storeId = readerSliceConfig.getString(com.alibaba.datax.plugin.rdbms.writer.Key.STORE_ID);
             if (StrUtil.isBlank(initDataDbUrl)) {
                 this.initDataDbUrl = jdbcUrl;
             }

@@ -7,27 +7,66 @@ import java.util.Date;
 /**
  * @author mingqiang
  * @date 2022/8/26 - 17:57
- * @desc
+ * @desc 医院
  */
 public class BasCustomer {
 
-    public Long id;
+    private Long id;
     @db_alias("member_id")
-    public String memberId;
-    public String name;//用户姓名
-    public String sex;//性别
-    public String tel;
+    private String memberId;
+    private String name;//用户姓名
+    private String sex;//性别
+    private String tel;
     @db_alias("check_time")
-    public Date checkTime;//体检时间
-    public Date birthday;//出生年月
+    private Date checkTime;//体检时间
+    private Date birthday;//出生年月
     @db_alias("marital_status")
-    public String maritalStatus;//婚姻状态
-    public String address;
-    public String sfzh;
-    public String age;
-    public String nation;//民族
-    @db_alias("clean_date")
-    public Date cleanDate;
+    private String maritalStatus;//婚姻状态
+    private String address;
+    private String sfzh;
+    private String nation;//民族
+    @db_alias("report_time")
+    private String reportTime;
+    @db_alias("package_name")
+    private String packageName;
+    @db_alias("package_price")
+    private String packagePrice;
+    @db_alias("is_group")
+    private String isGroup;
+
+
+    public String getPackageName() {
+        return packageName;
+    }
+
+    public void setPackageName(String packageName) {
+        this.packageName = packageName;
+    }
+
+    public String getPackagePrice() {
+        return packagePrice;
+    }
+
+    public void setPackagePrice(String packagePrice) {
+        this.packagePrice = packagePrice;
+    }
+
+    public String getIsGroup() {
+        return isGroup;
+    }
+
+    public void setIsGroup(String isGroup) {
+        this.isGroup = isGroup;
+    }
+
+    public String getReportTime() {
+        return reportTime;
+    }
+
+    public void setReportTime(String reportTime) {
+        this.reportTime = reportTime;
+    }
+
     public Long getId() {
         return id;
     }
@@ -84,28 +123,12 @@ public class BasCustomer {
         this.address = address;
     }
 
-    public String getAge() {
-        return age;
-    }
-
-    public void setAge(String age) {
-        this.age = age;
-    }
-
     public String getNation() {
         return nation;
     }
 
     public void setNation(String nation) {
         this.nation = nation;
-    }
-
-    public Date getCleanDate() {
-        return cleanDate;
-    }
-
-    public void setCleanDate(Date cleanDate) {
-        this.cleanDate = cleanDate;
     }
 
     public String getMemberId() {

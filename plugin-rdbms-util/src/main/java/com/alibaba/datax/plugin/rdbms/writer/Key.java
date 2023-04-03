@@ -50,4 +50,8 @@ public final class Key {
 
     public final static String INIT_DATA_DB_PASSWORD = "initDataDbPassword";
 
+    public final static String ORG_ID = "orgId";
+
+    public final static String STORE_ID = "storeId";
+
 }

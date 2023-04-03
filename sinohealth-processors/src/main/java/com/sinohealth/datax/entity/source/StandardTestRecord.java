@@ -13,34 +13,82 @@ import java.util.Date;
 
 public class StandardTestRecord implements Serializable {
 
-    public String vid;
+    private String vid;
     @db_alias("class_name")
-    public String className;
+    private String className;
     @db_alias("item_name")
-    public String itemName;
+    private String itemName;
     @db_alias("item_name_comn")
-    public String itemNameComn;
+    private String itemNameComn;
     @db_alias("item_id")
-    public String itemId;
+    private String itemId;
     @db_alias("item_results")
-    public String itemResults;
+    private String itemResults;
     @db_alias("item_unit")
-    public String itemUnit;
+    private String itemUnit;
     @db_alias("normal_h")
-    public String normalH;
+    private String normalH;
     @db_alias("normal_l")
-    public String normalL;
+    private String normalL;
     @db_alias("results_discrete")
-    public String resultsDiscrete;
+    private String resultsDiscrete;
     @db_alias("clean_time")
-    public Date cleanTime;
+    private Date cleanTime;
     @db_alias("unit_comm")
-    public String unitComm;
+    private String unitComm;
     @db_alias("clean_status")
-    public Integer cleanStatus;
+    private Integer cleanStatus;
+    private String remark;
+    @db_alias("switch_result")
+    private String switchResult;
+    @db_alias("switch_unit")
+    private String switchUnit;
+    @db_alias("report_time")
+    private Date reportTime;
+    @db_alias("org_id")
+    private String orgId;
+    @db_alias("store_id")
+    private String storeId;
 
-    public String remark;
+    public String getSwitchResult() {
+        return switchResult;
+    }
 
+    public void setSwitchResult(String switchResult) {
+        this.switchResult = switchResult;
+    }
+
+    public String getSwitchUnit() {
+        return switchUnit;
+    }
+
+    public void setSwitchUnit(String switchUnit) {
+        this.switchUnit = switchUnit;
+    }
+
+    public Date getReportTime() {
+        return reportTime;
+    }
+
+    public void setReportTime(Date reportTime) {
+        this.reportTime = reportTime;
+    }
+
+    public String getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(String orgId) {
+        this.orgId = orgId;
+    }
+
+    public String getStoreId() {
+        return storeId;
+    }
+
+    public void setStoreId(String storeId) {
+        this.storeId = storeId;
+    }
 
     public String getVid() {
         return vid;

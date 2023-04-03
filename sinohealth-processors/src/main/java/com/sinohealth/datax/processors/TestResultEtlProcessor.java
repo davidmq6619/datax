@@ -8,10 +8,12 @@ import com.google.common.collect.Maps;
 import com.sinohealth.datax.common.CommonData;
 import com.sinohealth.datax.common.Processor;
 import com.sinohealth.datax.entity.common.StandardBasTestItem;
+import com.sinohealth.datax.entity.source.BasTestItemTemp;
 import com.sinohealth.datax.entity.source.RegTest;
 import com.sinohealth.datax.entity.source.StandardTestRecord;
 import com.sinohealth.datax.entity.zktarget.StandardTestRecordList;
 import com.sinohealth.datax.utils.EtlConst;
+import com.sinohealth.datax.utils.EtlSTConst;
 import com.sinohealth.datax.utils.EtlStatus;
 import com.sinohealth.datax.utils.TextUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -23,8 +25,9 @@ import java.util.*;
 /**
  * @author mingqiang
  * @date 2022/08/29
+ * @desc 处理检验
  **/
-public class TestResultEtlProcessor implements Processor<RegTest, StandardTestRecordList> {
+public class TestResultEtlProcessor implements Processor<BasTestItemTemp, StandardTestRecordList> {
     public static final Logger LOG = LoggerFactory.getLogger(TestResultEtlProcessor.class);
     private static final HashMap<String, RegTest> hashMapData = new HashMap<>();
     private static Map<String, String> resultDiscreteMap = Maps.newHashMap();
@@ -98,7 +101,7 @@ public class TestResultEtlProcessor implements Processor<RegTest, StandardTestRe
     }
 
     @Override
-    public StandardTestRecordList dataProcess(RegTest itemTemp, StandardTestRecordList o, CommonData commonData) {
+    public StandardTestRecordList dataProcess(BasTestItemTemp itemTemp, StandardTestRecordList o, CommonData commonData) {
         StandardTestRecordList recordList = new StandardTestRecordList();
         List<StandardTestRecord> listRecord = new ArrayList<>();
         if (Objects.isNull(itemTemp)) {
@@ -107,23 +110,25 @@ public class TestResultEtlProcessor implements Processor<RegTest, StandardTestRe
         }
         String itemName = itemTemp.getItemName();
         StandardTestRecord testRecord = new StandardTestRecord();
-        String resultValue = TextUtils.textTrim(itemTemp.getResults());
+        String resultValue = TextUtils.textTrim(itemTemp.getResultValue());
 
         String name = StrUtil.isNotBlank(itemTemp.getItemName()) ? itemTemp.getItemName().trim() : "";
-        itemTemp.setResults(resultValue);
+        itemTemp.setResultValue(resultValue);
         itemTemp.setItemName(name);
 
         testRecord.setItemName(itemTemp.getItemName());
-        testRecord.setItemResults(itemTemp.getResults());
-        testRecord.setNormalL(itemTemp.getNormalL());
-        testRecord.setNormalH(itemTemp.getNormalH());
+        testRecord.setItemResults(itemTemp.getResultValue());
+        testRecord.setNormalL(itemTemp.getReference());
         testRecord.setItemUnit(itemTemp.getUnit());
         testRecord.setCleanTime(new Date());
         testRecord.setVid(itemTemp.getVid());
-        testRecord.setClassName(itemTemp.getItemFt());
+        testRecord.setClassName(itemTemp.getClassName());
         testRecord.setCleanStatus(1);
-        String normalL = itemTemp.getNormalL();
-        String normalH = itemTemp.getNormalH();
+        testRecord.setOrgId(EtlSTConst.orgId);
+        testRecord.setStoreId(EtlSTConst.storeId);
+        testRecord.setReportTime(itemTemp.getReportTime());
+        String normalL = itemTemp.getReference();
+        String normalH = "";
         try {
             if (StringUtils.isBlank(itemName)) {
                 testRecord.setRemark("清洗失败，itemName为空");
@@ -145,8 +150,8 @@ public class TestResultEtlProcessor implements Processor<RegTest, StandardTestRe
             Map<String, StandardBasTestItem> basTestItemMap = commonData.getBasTestItemMap();
             Map<String, StandardBasTestItem> basTestMethodItemMap = commonData.getBasTestMethodItemMap();
             String itemFt = "";
-            if (StrUtil.isNotBlank(itemTemp.getItemFt())) {
-                itemFt = itemTemp.getItemFt()
+            if (StrUtil.isNotBlank(itemTemp.getClassName())) {
+                itemFt = itemTemp.getClassName()
                         .replace("（", "(")
                         .replace("）", ")").toLowerCase().trim();
             }
@@ -171,8 +176,8 @@ public class TestResultEtlProcessor implements Processor<RegTest, StandardTestRe
             //进行标准化清洗
             testRecord.setItemNameComn(basTestItem.getItemNameCStandard());
             String unitComm = commonData.getBasTestUnitMap().get(itemTemp.getUnit());
-            testRecord.setUnitComm(unitComm);
-            String results = itemTemp.getResults();
+            testRecord.setUnitComm(StrUtil.isNotBlank(unitComm)?unitComm:itemTemp.getUnit());
+            String results = itemTemp.getResultValue();
 
             //优化上下限也移除去掉特殊符号
             if (StringUtils.isNotBlank(normalH)) {
@@ -392,11 +397,13 @@ public class TestResultEtlProcessor implements Processor<RegTest, StandardTestRe
                     }
                 }
             }
-            itemTemp.setResults(results);
+            itemTemp.setResultValue(results);
             testRecord.setItemResults(results);
             testRecord.setNormalL(normalL);
             testRecord.setNormalH(normalH);
             resultsDiscreteProcess(testRecord);
+            testRecord.setSwitchResult(testRecord.getItemResults());
+            testRecord.setSwitchUnit(testRecord.getUnitComm());
             listRecord.add(testRecord);
             recordList.setList(listRecord);
         } catch (Exception e) {

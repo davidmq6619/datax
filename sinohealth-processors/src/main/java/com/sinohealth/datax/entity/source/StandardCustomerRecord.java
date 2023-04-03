@@ -7,26 +7,86 @@ import java.util.Date;
 
 public class StandardCustomerRecord {
 
-    public String vid;
-    public String name;//用户姓名
-    public String sex;//性别
-    public String mobile;
+    private String vid;
+    private String name;//用户姓名
+    private String sex;//性别
+    private String mobile;
     @db_alias("apply_time")
-    public Date applyTime;//体检时间
+    private Date applyTime;//体检时间
     @db_alias("customer_csrq")
-    public Date customerCsrq;//出生年月
+    private Date customerCsrq;//出生年月
     @db_alias("customer_sfzh")
-    public String customerSfzh;
-    public String age;
+    private String customerSfzh;
+    private String age;
     @db_alias("clean_time")
-    public Date cleanTime;
+    private Date cleanTime;
     @db_alias("clean_status")
-    public Integer cleanStatus;
-    public String remark;
-    public String address;
-    public String nation;
+    private Integer cleanStatus;
+    private String remark;
+    private String address;
+    private String nation;
     @db_alias("marital_Status")
-    public String maritalStatus;
+    private String maritalStatus;
+    @db_alias("org_id")
+    private String orgId;
+    @db_alias("store_id")
+    private String storeId;
+    @db_alias("package_name")
+    private String packageName;
+    @db_alias("package_price")
+    private String packagePrice;
+    @db_alias("report_time")
+    private String reportTime;
+    @db_alias("is_group")
+    private String isGroup;
+
+    public String getIsGroup() {
+        return isGroup;
+    }
+
+    public void setIsGroup(String isGroup) {
+        this.isGroup = isGroup;
+    }
+
+    public String getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(String orgId) {
+        this.orgId = orgId;
+    }
+
+    public String getStoreId() {
+        return storeId;
+    }
+
+    public void setStoreId(String storeId) {
+        this.storeId = storeId;
+    }
+
+    public String getPackageName() {
+        return packageName;
+    }
+
+    public void setPackageName(String packageName) {
+        this.packageName = packageName;
+    }
+
+    public String getPackagePrice() {
+        return packagePrice;
+    }
+
+    public void setPackagePrice(String packagePrice) {
+        this.packagePrice = packagePrice;
+    }
+
+    public String getReportTime() {
+        return reportTime;
+    }
+
+    public void setReportTime(String reportTime) {
+        this.reportTime = reportTime;
+    }
 
     public String getVid() {
         return vid;

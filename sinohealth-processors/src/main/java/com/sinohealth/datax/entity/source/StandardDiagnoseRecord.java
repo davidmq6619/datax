@@ -17,7 +17,6 @@ public class StandardDiagnoseRecord implements Serializable {
     @db_alias("class_name")
     private String className;
 
-
     @db_alias("item_id")
     private String itemId;
 
@@ -38,8 +37,49 @@ public class StandardDiagnoseRecord implements Serializable {
     @db_alias("image_diagnose")
     private String imageDiagnose;
 
+    @db_alias("org_id")
+    private String orgId;
 
+    @db_alias("store_id")
+    private String storeId;
 
+    @db_alias("report_time")
+    private Date reportTime;
+
+    @db_alias("results_discrete")
+    private Integer resultsDiscrete;
+
+    public String getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(String orgId) {
+        this.orgId = orgId;
+    }
+
+    public String getStoreId() {
+        return storeId;
+    }
+
+    public void setStoreId(String storeId) {
+        this.storeId = storeId;
+    }
+
+    public Date getReportTime() {
+        return reportTime;
+    }
+
+    public void setReportTime(Date reportTime) {
+        this.reportTime = reportTime;
+    }
+
+    public Integer getResultsDiscrete() {
+        return resultsDiscrete;
+    }
+
+    public void setResultsDiscrete(Integer resultsDiscrete) {
+        this.resultsDiscrete = resultsDiscrete;
+    }
 
     public String getVid() {
         return vid;

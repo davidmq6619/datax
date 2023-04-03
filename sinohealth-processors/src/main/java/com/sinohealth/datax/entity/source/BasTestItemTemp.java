@@ -3,19 +3,17 @@ package com.sinohealth.datax.entity.source;
 import com.sinohealth.datax.reflection.annotations.db_alias;
 
 import java.io.Serializable;
+import java.util.Date;
 
 /**
  * 检验结果Result
  *
  * @author mingqiang
- * @version 1766517
+ * @desc 医院检验
  */
 public class BasTestItemTemp implements Serializable {
 
-    public Long id;
-
     public String vid;
-
     @db_alias("class_name")
     public String className;                // 大类
     @db_alias("item_name")
@@ -29,12 +27,15 @@ public class BasTestItemTemp implements Serializable {
 
     public String reference;                    // 上下限
 
-    public Long getId() {
-        return id;
+    @db_alias("report_time")
+    public Date reportTime;
+
+    public Date getReportTime() {
+        return reportTime;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setReportTime(Date reportTime) {
+        this.reportTime = reportTime;
     }
 
     public String getVid() {

@@ -6,6 +6,7 @@ import com.sinohealth.datax.entity.source.CheckResultMsS;
 import com.sinohealth.datax.entity.source.StandardCheckRecord;
 import com.sinohealth.datax.entity.zktarget.CheckResultMsEtl;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -208,13 +209,8 @@ public class EtlFeiUtils {
         if (zhijingtrue != null && !zhijingtrue.isEmpty()) {
             //目标语句有结节直径的语句
             List<String> hits5 = zhijingtrue.stream().map(y -> y.get("str")).collect(Collectors.toList());
-            if (hits5.size() == 1) {
-                finalHit = hits5.get(0);
-            } else {
-                finalHit = zhijingOrder(hits5);
-            }
             //添加最大结节直径
-            list.add(buildResultByItemNameCommA(checkResultMsS, itemNameCommC, String.valueOf(zhijingOrderMM(finalHit))));
+            list.add(buildResultByItemNameCommA(checkResultMsS, itemNameCommC, zhijingOrderMM(hits5)));
         }
         //定位上述条件在哪一句中 end
     }
@@ -232,9 +228,11 @@ public class EtlFeiUtils {
         etl.setItemName(checkResultMsS.getItemName());
         etl.setItemNameComn(itemnameComm);
         etl.setCleanStatus(EtlStatus.ETL_SUCCESS.getCode());
+        etl.setResultsDiscrete(2);
         if ("0".equals(result)) {
             etl.setRemark(EtlStatus.ETL_SUCCESS_NORMAL.getMessage());
             etl.setCleanStatus(EtlStatus.ETL_SUCCESS_NORMAL.getCode());
+            etl.setResultsDiscrete(0);
         }
         if (itemnameComm.equals(itemNameCommC)) {
             if ( checkResultMsS.getItemResults() !=null && checkResultMsS.getItemResults().toLowerCase().contains("mm")) {
@@ -245,51 +243,21 @@ public class EtlFeiUtils {
         return etl;
     }
 
-    public static String zhijingOrder(List<String> hits) {
-        //毫米
-        double cur_zhijing = 0;
-        String cur_hit = "";
-        for (String hit : hits) {
-            List<String> listS1 = new ArrayList<>(ReUtil.findAll(regx3, hit, 0));
-            List<String> listS = new ArrayList<>();
-            listS1.forEach(item -> {
-                listS.addAll(ReUtil.findAll(regx, hit, 0));
-            });
-            if (!listS.isEmpty()) {
-                listS.sort((x1, x2) -> {
-                    return Double.valueOf(x1).compareTo(Double.valueOf(x2));
-                });
-                String s = listS.get(listS.size() - 1);
-
-                if (NumberUtil.isNumber(s)) {
-                    double tempValue = Double.valueOf(s);
-                    if (hit.contains("cm") || hit.contains("CM") || hit.contains("Cm") || hit.contains("cM")) {
-                        tempValue = tempValue * 10;
-                    }
-                    if (tempValue > cur_zhijing) {
-                        cur_zhijing = tempValue;
-                        cur_hit = hit;
-                    }
-                }
-
-            }
-        }
-        return cur_hit;
-    }
-
-    public static double zhijingOrderMM(String hit) {
+    public static String zhijingOrderMM(List<String> hits) {
         HashMap<String, String> hashMap = new HashMap<>();
-        double cur_zhijing = 0;
+        String cur_zhijing = "0";
         List<String> listS = new ArrayList<>();
-        String tempResult = hit.toLowerCase();
-        String[] tempResultList = tempResult.split("[,，、]");
-        for (String s : tempResultList) {
-            if (s.contains("cm") || s.contains("mm")) {
-                for (String s1 : ReUtil.findAll(regx3, s, 0)) {
-                    List<String> numList = ReUtil.findAll(regx, s1, 0);
-                    listS.addAll(numList);
-                    for (String s2 : numList) {
-                        hashMap.put(s2,s1);
+        for (String hit : hits) {
+            String tempResult = hit.toLowerCase();
+            String[] tempResultList = tempResult.split("[,，、]");
+            for (String s : tempResultList) {
+                if (s.contains("cm") || s.contains("mm")) {
+                    for (String s1 : ReUtil.findAll(regx3, s, 0)) {
+                        List<String> numList = ReUtil.findAll(regx, s1, 0);
+                        listS.addAll(numList);
+                        for (String s2 : numList) {
+                            hashMap.put(s2,s1);
+                        }
                     }
                 }
             }
@@ -299,11 +267,11 @@ public class EtlFeiUtils {
             String s = listS.get(listS.size() - 1);
             String hitStr = hashMap.get(s);
             if (NumberUtil.isNumber(s)) {
-                double tempValue = Double.valueOf(s);
+                BigDecimal tempValue = new BigDecimal(s);
                 if (hitStr.contains("cm")) {
-                    cur_zhijing = tempValue * 10;
+                    cur_zhijing = tempValue.multiply(new BigDecimal(10)).toString();
                 } else if (hitStr.contains("mm")) {
-                    cur_zhijing = tempValue;
+                    cur_zhijing = tempValue.toString();
                 }
             }
         }

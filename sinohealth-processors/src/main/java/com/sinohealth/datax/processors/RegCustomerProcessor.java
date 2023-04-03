@@ -1,24 +1,23 @@
 package com.sinohealth.datax.processors;
 
-import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.IdcardUtil;
-import cn.hutool.core.util.PhoneUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
-import com.alibaba.fastjson.JSON;
 import com.sinohealth.datax.common.CommonData;
 import com.sinohealth.datax.common.Processor;
 import com.sinohealth.datax.entity.source.BasCustomer;
-import com.sinohealth.datax.entity.source.RegCustomer;
 import com.sinohealth.datax.entity.source.StandardCustomerRecord;
 import com.sinohealth.datax.entity.zktarget.StandardCustomerRecordList;
+import com.sinohealth.datax.utils.EtlConst;
+import com.sinohealth.datax.utils.EtlSTConst;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Random;
 
 /**
  * @author mingqiang
@@ -39,6 +38,12 @@ public class RegCustomerProcessor implements Processor<BasCustomer, StandardCust
         standardCustomerRecord.setAddress(customer.getAddress());
         standardCustomerRecord.setMaritalStatus(customer.getMaritalStatus());
         standardCustomerRecord.setNation(customer.getNation());
+        standardCustomerRecord.setReportTime(customer.getReportTime());
+        standardCustomerRecord.setStoreId(EtlSTConst.storeId);
+        standardCustomerRecord.setOrgId(EtlSTConst.orgId);
+        standardCustomerRecord.setPackageName(customer.getPackageName());
+        standardCustomerRecord.setPackagePrice(customer.getPackagePrice());
+        standardCustomerRecord.setIsGroup(customer.getIsGroup());
         StringBuilder str = new StringBuilder();
         try {
             if (customer.getCheckTime() != null) {
