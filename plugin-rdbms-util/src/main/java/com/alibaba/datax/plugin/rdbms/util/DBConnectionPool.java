@@ -28,15 +28,15 @@ public class DBConnectionPool {
             cpds.setPassword(password);
 
             /**初始化时创建的连接数,应在minPoolSize与maxPoolSize之间取值.默认为3**/
-            cpds.setInitialPoolSize(100);
+            cpds.setInitialPoolSize(3);
             /**连接池中保留的最大连接数据.默认为15**/
-            cpds.setMaxPoolSize(1000);
+            cpds.setMaxPoolSize(15);
             /**当连接池中的连接用完时，C3PO一次性创建新的连接数目;**/
             cpds.setAcquireIncrement(1);
             /**隔多少秒检查所有连接池中的空闲连接,默认为0表示不检查;**/
-            cpds.setIdleConnectionTestPeriod(60);
+            cpds.setIdleConnectionTestPeriod(5);
             /**最大空闲时间,超过空闲时间的连接将被丢弃.为0或负数据则永不丢弃.默认为0;**/
-            cpds.setMaxIdleTime(3000);
+            cpds.setMaxIdleTime(3);
 
             /**因性能消耗大请只在需要的时候使用它。如果设为true那么在每个connection提交的
              时候都将校验其有效性。建议使用idleConnectionTestPeriod或automaticTestTable

@@ -10,14 +10,13 @@ import com.sinohealth.datax.common.Processor;
 import com.sinohealth.datax.entity.source.BasCustomer;
 import com.sinohealth.datax.entity.source.StandardCustomerRecord;
 import com.sinohealth.datax.entity.zktarget.StandardCustomerRecordList;
-import com.sinohealth.datax.utils.EtlConst;
 import com.sinohealth.datax.utils.EtlSTConst;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Random;
+
 
 /**
  * @author mingqiang
@@ -102,7 +101,7 @@ public class RegCustomerProcessor implements Processor<BasCustomer, StandardCust
             String remark = str.toString();
             if (StrUtil.isNotBlank(remark)) {
                 standardCustomerRecord.setRemark(remark);
-                standardCustomerRecord.setCleanStatus(6);
+                standardCustomerRecord.setCleanStatus(1);
             } else {
                 standardCustomerRecord.setCleanStatus(1);
             }

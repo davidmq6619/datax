@@ -458,6 +458,15 @@ public class SinohealthRdbmsReader {
                                         recordSender.sendToWriter(record);
                                     }
                                 }
+                            }else if (targetEntity instanceof StandardCheckFeiResultList) {
+                                List<StandardCheckFeiResult> details = ((StandardCheckFeiResultList) targetEntity).getList();
+                                if (CollectionUtil.isNotEmpty(details)) {
+                                    for (StandardCheckFeiResult detail : details) {
+                                        Record record = recordSender.createRecord();
+                                        record = ReflectUtil.getRecord(record, detail);
+                                        recordSender.sendToWriter(record);
+                                    }
+                                }
                             } else {
                                 Record record = recordSender.createRecord();
                                 record = ReflectUtil.getRecord(record, targetEntity);
