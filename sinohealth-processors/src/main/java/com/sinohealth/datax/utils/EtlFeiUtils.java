@@ -3,7 +3,9 @@ package com.sinohealth.datax.utils;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.ReUtil;
 import com.sinohealth.datax.entity.source.CheckResultMsS;
+import com.sinohealth.datax.entity.source.RegCheck;
 import com.sinohealth.datax.entity.source.StandardCheckRecord;
+import com.sinohealth.datax.entity.source.StandardMnCheckRecord;
 import com.sinohealth.datax.entity.zktarget.CheckResultMsEtl;
 
 import java.math.BigDecimal;
@@ -114,8 +116,8 @@ public class EtlFeiUtils {
 
     public static final String regx3 = "((([1-9]\\d*\\.?\\\\d*)|(0\\.\\d*[1-9]))[×Xx*])?(([1-9]\\d*\\.?\\d*)|(0\\.\\d*[1-9]))[cm]m";
 
-    public static void etl(StandardCheckRecord checkResultMsS, List<StandardCheckRecord> list) {
-        String result = checkResultMsS.getItemResults()
+    public static void etl(RegCheck checkResultMsS, List<StandardMnCheckRecord> list) {
+        String result = checkResultMsS.getResults()
                 .replace("(","")
                 .replace(")","")
                 .replace("（","")
@@ -216,16 +218,14 @@ public class EtlFeiUtils {
     }
 
     //构建etl结果
-    public static StandardCheckRecord buildResultByItemNameCommA(StandardCheckRecord checkResultMsS, String itemnameComm, String result) {
-        StandardCheckRecord etl = new StandardCheckRecord();
+    public static StandardMnCheckRecord buildResultByItemNameCommA(RegCheck checkResultMsS, String itemnameComm, String result) {
+        StandardMnCheckRecord etl = new StandardMnCheckRecord();
         etl.setCleanTime(new Date());
-        etl.setImageDiagnose(checkResultMsS.getImageDiagnose());
-        etl.setImageDescribe(checkResultMsS.getItemResults());
+        etl.setImageDescribe(checkResultMsS.getResults());
         etl.setVid(checkResultMsS.getVid());
-        etl.setInitResult(itemnameComm);
-        etl.setClassName(checkResultMsS.getClassName());
-        etl.setItemResults(result);
-        etl.setItemName(checkResultMsS.getItemName());
+        etl.setItemFt(checkResultMsS.getItemFt());
+        etl.setResults(result);
+        etl.setItemName(itemnameComm);
         etl.setItemNameComn(itemnameComm);
         etl.setCleanStatus(EtlStatus.ETL_SUCCESS.getCode());
         etl.setResultsDiscrete(2);
@@ -235,9 +235,8 @@ public class EtlFeiUtils {
             etl.setResultsDiscrete(0);
         }
         if (itemnameComm.equals(itemNameCommC)) {
-            if ( checkResultMsS.getItemResults() !=null && checkResultMsS.getItemResults().toLowerCase().contains("mm")) {
-                etl.setUnitComm("mm");
-                etl.setItemUnit("mm");
+            if ( checkResultMsS.getResults() !=null && checkResultMsS.getResults().toLowerCase().contains("mm")) {
+                etl.setUnit("mm");
             }
         }
         return etl;

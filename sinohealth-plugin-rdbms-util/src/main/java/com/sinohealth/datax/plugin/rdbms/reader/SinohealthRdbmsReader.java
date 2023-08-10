@@ -403,9 +403,9 @@ public class SinohealthRdbmsReader {
                         if (sourceEntity != null) {
                             targetEntity = processor.dataProcess(sourceEntity, targetEntity, this.commonData);
                             if (targetEntity instanceof StandardCustomerRecordList) {
-                                List<StandardCustomerRecord> details = ((StandardCustomerRecordList) targetEntity).getList();
+                                List<RegMnCustomer> details = ((StandardCustomerRecordList) targetEntity).getList();
                                 if (CollectionUtil.isNotEmpty(details)) {
-                                    for (StandardCustomerRecord detail : details) {
+                                    for (RegMnCustomer detail : details) {
                                         // create record
                                         Record record = recordSender.createRecord();
                                         record = ReflectUtil.getRecord(record, detail);
@@ -462,6 +462,33 @@ public class SinohealthRdbmsReader {
                                 List<StandardCheckFeiResult> details = ((StandardCheckFeiResultList) targetEntity).getList();
                                 if (CollectionUtil.isNotEmpty(details)) {
                                     for (StandardCheckFeiResult detail : details) {
+                                        Record record = recordSender.createRecord();
+                                        record = ReflectUtil.getRecord(record, detail);
+                                        recordSender.sendToWriter(record);
+                                    }
+                                }
+                            }else if (targetEntity instanceof StandardCheckJzxResultList) {
+                                List<StandardCheckJzxResult> details = ((StandardCheckJzxResultList) targetEntity).getList();
+                                if (CollectionUtil.isNotEmpty(details)) {
+                                    for (StandardCheckJzxResult detail : details) {
+                                        Record record = recordSender.createRecord();
+                                        record = ReflectUtil.getRecord(record, detail);
+                                        recordSender.sendToWriter(record);
+                                    }
+                                }
+                            }else if (targetEntity instanceof StandardMnTestRecordList) {
+                                List<StandardMnTestRecord> details = ((StandardMnTestRecordList) targetEntity).getList();
+                                if (CollectionUtil.isNotEmpty(details)) {
+                                    for (StandardMnTestRecord detail : details) {
+                                        Record record = recordSender.createRecord();
+                                        record = ReflectUtil.getRecord(record, detail);
+                                        recordSender.sendToWriter(record);
+                                    }
+                                }
+                            }else if (targetEntity instanceof StandardMnCheckRecordList) {
+                                List<StandardMnCheckRecord> details = ((StandardMnCheckRecordList) targetEntity).getList();
+                                if (CollectionUtil.isNotEmpty(details)) {
+                                    for (StandardMnCheckRecord detail : details) {
                                         Record record = recordSender.createRecord();
                                         record = ReflectUtil.getRecord(record, detail);
                                         recordSender.sendToWriter(record);

@@ -1,5 +1,6 @@
 package com.sinohealth.datax.entity.zktarget;
 
+import com.sinohealth.datax.entity.source.RegMnCustomer;
 import com.sinohealth.datax.entity.source.StandardCustomerRecord;
 
 import java.util.List;
@@ -11,13 +12,13 @@ import java.util.List;
  */
 public class StandardCustomerRecordList {
 
-    public List<StandardCustomerRecord> list;
+    public List<RegMnCustomer> list;
 
-    public List<StandardCustomerRecord> getList() {
+    public List<RegMnCustomer> getList() {
         return list;
     }
 
-    public void setList(List<StandardCustomerRecord> list) {
+    public void setList(List<RegMnCustomer> list) {
         this.list = list;
     }
 }

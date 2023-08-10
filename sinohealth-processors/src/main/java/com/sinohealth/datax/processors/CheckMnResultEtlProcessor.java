@@ -8,8 +8,13 @@ import com.sinohealth.datax.common.CommonData;
 import com.sinohealth.datax.common.Processor;
 import com.sinohealth.datax.entity.common.BasCheckItem;
 import com.sinohealth.datax.entity.common.KeywordsLevelDto;
-import com.sinohealth.datax.entity.source.*;
+import com.sinohealth.datax.entity.source.BasCheck;
+import com.sinohealth.datax.entity.source.RegCheck;
+import com.sinohealth.datax.entity.source.StandardCheckRecord;
+import com.sinohealth.datax.entity.source.StandardMnCheckRecord;
+import com.sinohealth.datax.entity.zktarget.Check;
 import com.sinohealth.datax.entity.zktarget.StandardCheckRecordList;
+import com.sinohealth.datax.entity.zktarget.StandardMnCheckRecordList;
 import com.sinohealth.datax.utils.*;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -21,36 +26,39 @@ import java.util.stream.Collectors;
 /**
  * @author mingqiang
  * @date 2022/08/29
+ * 处理美年检查
  **/
-public class CheckResultEtlProcessor implements Processor<BasCheck, StandardCheckRecordList> {
-    public static final Logger LOG = LoggerFactory.getLogger(CheckResultEtlProcessor.class);
+public class CheckMnResultEtlProcessor implements Processor<RegCheck, StandardMnCheckRecordList> {
+    public static final Logger LOG = LoggerFactory.getLogger(CheckMnResultEtlProcessor.class);
     //只需要结果，不需要离散型
     private static final List<String> CHECK_RESULT_DATA = Arrays.asList("体重指数", "身高", "体重", "骨密度检测");
 
     public final static String regx = "([1-9]\\d*\\.?\\d*)|(0\\.\\d*[1-9])";
 
     @Override
-    public StandardCheckRecordList dataProcess(BasCheck check, StandardCheckRecordList checkList, CommonData commonData) {
-        StandardCheckRecordList recordList = new StandardCheckRecordList();
-        List<StandardCheckRecord> listRecord = new ArrayList<>();
-        StandardCheckRecord checkRecord = new StandardCheckRecord();
+    public StandardMnCheckRecordList dataProcess(RegCheck check, StandardMnCheckRecordList recordList, CommonData commonData) {
+        List<StandardMnCheckRecord> listRecord = new ArrayList<>();
+        StandardMnCheckRecord checkRecord = new StandardMnCheckRecord();
         checkRecord.setItemName(check.getItemName());
         String results = check.getResults();
-        checkRecord.setItemResults(results);
-        checkRecord.setItemUnit(check.getUnit());
+        checkRecord.setResults(results);
+        checkRecord.setUnit(check.getUnit());
         checkRecord.setCleanTime(new Date());
         checkRecord.setVid(check.getVid());
-        checkRecord.setClassName(check.getClassName());
+        String itemFt = check.getItemFt();
+        if(StrUtil.isNotBlank(itemFt) && itemFt.contains("@#")){
+            String[] split = itemFt.split("@#");
+            itemFt = split[0];
+        }
+        checkRecord.setItemFt(itemFt);
+        check.setItemFt(itemFt);
         checkRecord.setCleanStatus(1);
         checkRecord.setResultsDiscrete(0);
-        checkRecord.setNormalL(check.getReference());
-        checkRecord.setReportTime(check.getReportTime());
-        checkRecord.setOrgId(EtlSTConst.orgId);
-        checkRecord.setStoreId(EtlSTConst.storeId);
+        checkRecord.setNormalL(check.getNormalL());
         checkRecord.setCleanStatus(EtlStatus.ETL_DATA.getCode());
         checkRecord.setRemark(EtlStatus.ETL_DATA.getMessage());
         try {
-            if (StrUtil.isBlank(checkRecord.getClassName())) {
+            if (StrUtil.isBlank(itemFt)) {
                 checkRecord.setCleanStatus(EtlStatus.ETL_ERROR.getCode());
                 checkRecord.setRemark("清洗失败，未找到检查数据大项");
                 listRecord.add(checkRecord);
@@ -70,10 +78,7 @@ public class CheckResultEtlProcessor implements Processor<BasCheck, StandardChec
             }
             //进行标准化清洗
             checkRecord.setItemNameComn(itemNameComn);
-            String unitComm = commonData.getBasTestUnitMap().get(check.getUnit());
-            if (StrUtil.isNotBlank(unitComm)) {
-                checkRecord.setUnitComm(unitComm);
-            }
+            
             if (StrUtil.isBlank(results)) {
                 checkRecord.setCleanStatus(EtlStatus.ETL_ERROR.getCode());
                 checkRecord.setRemark("清洗失败，结果值为空");
@@ -81,11 +86,12 @@ public class CheckResultEtlProcessor implements Processor<BasCheck, StandardChec
                 recordList.setList(listRecord);
                 return recordList;
             }
-            if (StrUtil.isBlank(check.getImageDiagnose())) {
+            boolean flag = false;
                 if (checkRecord.getItemName().contains(EtlConst.BMI) || checkRecord.getItemNameComn().equals("收缩压") || checkRecord.getItemNameComn().equals("舒张压") || checkRecord.getItemNameComn().equals("身高") || checkRecord.getItemNameComn().equals("体重")) {
+                    flag = true;
                     if (checkRecord.getItemName().contains("体重指数")) {
                         itemName = checkRecord.getItemName();
-                        itemName = itemName.replace("--", "-").replace("-", "~");
+                        itemName = itemName.replace("--", "-").replace("~", "-");
                         if (itemName.contains("-")) {
                             String temp = itemName.replace(EtlConst.BMI, "").replace("(", "").replace("（", "").replace("）", "").replace(")", "").trim();
                             String[] str = temp.split("-");
@@ -118,8 +124,8 @@ public class CheckResultEtlProcessor implements Processor<BasCheck, StandardChec
                             if (StringUtils.isBlank(checkRecord.getNormalH())) {
                                 checkRecord.setNormalH("140");
                             } else {
-                                if (checkRecord.getItemUnit() != null) {
-                                    checkRecord.setNormalH(checkRecord.getNormalH().replace(checkRecord.getItemUnit(), "").trim());
+                                if (checkRecord.getUnit() != null) {
+                                    checkRecord.setNormalH(checkRecord.getNormalH().replace(checkRecord.getUnit(), "").trim());
                                 }
                             }
                         }
@@ -139,66 +145,20 @@ public class CheckResultEtlProcessor implements Processor<BasCheck, StandardChec
                             if (StringUtils.isBlank(checkRecord.getNormalH())) {
                                 checkRecord.setNormalH("90");
                             } else {
-                                if (checkRecord.getItemUnit() != null) {
-                                    checkRecord.setNormalH(checkRecord.getNormalH().replace(checkRecord.getItemUnit(), "").trim());
+                                if (checkRecord.getUnit() != null) {
+                                    checkRecord.setNormalH(checkRecord.getNormalH().replace(checkRecord.getUnit(), "").trim());
                                 }
                             }
                         }
-                    }else if("身高".equals(checkRecord.getItemNameComn()) && StrUtil.isNotBlank(check.getSummary())){
-                        //体重指数处理
-                        String summary = check.getSummary();
-                        String[] splitStrings = TextTrimUtils.splitSignsToArrByParam(summary, ";；。, ，");
-                        //舒张压：44 ↓；您的体重指数为21.23,属于标准体重范围46.2～59.9Kg;
-                        String hitStr = "";
-                        for (String s : splitStrings) {
-                            if(s.contains(EtlConst.BMI)){
-                                hitStr =  s;
-                                break;
-                            }
-                        }
-                        if(StrUtil.isNotBlank(hitStr)){
-                            List<String> list = ReUtil.findAll(EtlConst.regx, hitStr, 0);
-                            if(!list.isEmpty()){
-                                list.sort(Comparator.comparing(Double::valueOf));
-                                String s = list.get(list.size() - 1);
-                                StandardCheckRecord checkRecordBMI = new StandardCheckRecord();
-                                checkRecordBMI.setItemName(EtlConst.BMI);
-                                checkRecordBMI.setItemNameComn(EtlConst.BMI);
-                                checkRecordBMI.setItemNameComn(EtlConst.BMI);
-                                checkRecordBMI.setItemResults(s);
-                                checkRecordBMI.setItemUnit(check.getUnit());
-                                checkRecordBMI.setCleanTime(new Date());
-                                checkRecordBMI.setVid(check.getVid());
-                                checkRecordBMI.setClassName(EtlConst.YBJC);
-                                checkRecordBMI.setCleanStatus(1);
-                                checkRecordBMI.setNormalL("18.5");
-                                checkRecordBMI.setNormalH("24");
-                                checkRecordBMI.setReportTime(check.getReportTime());
-                                checkRecordBMI.setOrgId(EtlSTConst.orgId);
-                                checkRecordBMI.setStoreId(EtlSTConst.storeId);
-                                checkRecordBMI.setCleanStatus(EtlStatus.ETL_SUCCESS.getCode());
-                                checkRecordBMI.setRemark(EtlStatus.ETL_SUCCESS.getMessage());
-                                checkRecordBMI.setSwitchResult(s);
-                                checkRecordBMI.setSwitchUnit("kg/m^2");
-                                resultsDiscreteProcess(checkRecordBMI, commonData);
-                                listRecord.add(checkRecordBMI);
-                            }
-                        }
                     }
-                }
-                if(!results.contains("未检") && !results.contains("弃检")){
-                    checkRecord.setSwitchResult(results);
-                    checkRecord.setSwitchUnit(check.getUnit());
-                }
                 checkRecord.setCleanStatus(EtlStatus.ETL_SUCCESS.getCode());
                 checkRecord.setRemark(EtlStatus.ETL_SUCCESS.getMessage());
-                check.setResults(results);
-                checkRecord.setItemResults(results);
+                checkRecord.setResults(results);
                 resultsDiscreteProcess(checkRecord, commonData);
                 listRecord.add(checkRecord);
             } else {
                 //三大结节处理
-                listRecord = checkHandler(checkRecord, commonData);
+                listRecord = checkHandler(check, commonData);
             }
             recordList.setList(listRecord);
         } catch (Exception e) {
@@ -207,50 +167,50 @@ public class CheckResultEtlProcessor implements Processor<BasCheck, StandardChec
         return recordList;
     }
 
-    public void resultsDiscreteProcess(StandardCheckRecord str, CommonData commonData) {
-        if (NumberUtil.isNumber(str.getItemResults()) && NumberUtil.isNumber(str.getNormalL())
+    public void resultsDiscreteProcess(StandardMnCheckRecord str, CommonData commonData) {
+        if (NumberUtil.isNumber(str.getResults()) && NumberUtil.isNumber(str.getNormalL())
                 && NumberUtil.isNumber(str.getNormalH())) {
-            double value = Double.valueOf(str.getItemResults()).doubleValue();
+            double value = Double.valueOf(str.getResults()).doubleValue();
             double normalL = Double.valueOf(str.getNormalL()).doubleValue();
             double normalH = Double.valueOf(str.getNormalH()).doubleValue();
 
             if ("体重指数".equals(str.getItemNameComn())) {
                 if (value <= normalH && value >= normalH * 0.9) {
                     str.setResultsDiscrete(1); // 临界高
-                    str.setItemResults("正常");
+                    str.setResults("正常");
                 } else if (value >= normalL && value <= normalL * 1.1) {
                     str.setResultsDiscrete(-1); // 临界低
-                    str.setItemResults("正常");
+                    str.setResults("正常");
                 } else if (value > normalH) {
                     str.setResultsDiscrete(2); // 高
                     if (value >= 28) {
-                        str.setItemResults("肥胖");
+                        str.setResults("肥胖");
                     } else {
-                        str.setItemResults("超重");
+                        str.setResults("超重");
                     }
                 } else if (value < normalL) {
                     str.setResultsDiscrete(-2); // 低
-                    str.setItemResults("偏瘦");
+                    str.setResults("偏瘦");
                 } else {
                     str.setResultsDiscrete(0); // 正常
-                    str.setItemResults("正常");
+                    str.setResults("正常");
                 }
             } else if ("收缩压".equals(str.getItemNameComn()) || "舒张压".equals(str.getItemNameComn())) {
                 if (value <= normalH && value >= normalH * 0.9) {
                     str.setResultsDiscrete(1); // 临界高
-                    str.setItemResults("正常");
+                    str.setResults("正常");
                 } else if (value >= normalL && value <= normalL * 1.1) {
                     str.setResultsDiscrete(-1); // 临界低
-                    str.setItemResults("正常");
+                    str.setResults("正常");
                 } else if (value > normalH) {
                     str.setResultsDiscrete(2); // 高
-                    str.setItemResults("偏高");
+                    str.setResults("偏高");
                 } else if (value < normalL) {
                     str.setResultsDiscrete(-2); // 低
-                    str.setItemResults("偏低");
+                    str.setResults("偏低");
                 } else {
                     str.setResultsDiscrete(0); // 正常
-                    str.setItemResults("正常");
+                    str.setResults("正常");
                 }
             }
             str.setCleanStatus(EtlStatus.ETL_SUCCESS.getCode());
@@ -258,14 +218,14 @@ public class CheckResultEtlProcessor implements Processor<BasCheck, StandardChec
         }
     }
 
-    public List<StandardCheckRecord> checkHandler(StandardCheckRecord check, CommonData commonData) {
-        List<StandardCheckRecord> temp = new ArrayList<>();
+    public List<StandardMnCheckRecord> checkHandler(RegCheck check, CommonData commonData) {
+        List<StandardMnCheckRecord> temp = new ArrayList<>();
 
         boolean levelFlag = false;
-        String results = check.getItemResults();
-        if (check.getClassName().contains(EtlConst.ITEM_THYROID)) {
+        String results = check.getResults();
+        if (check.getItemFt().contains(EtlConst.ITEM_THYROID)) {
             try {
-                String result = check.getItemResults();
+                String result = check.getResults();
                 if (StringUtils.isNotBlank(result)) {
                     result = result.replaceAll("探及", "见");
                     result = result.replaceAll(EtlConst.REGX_SENSITIVE, "******");
@@ -298,29 +258,26 @@ public class CheckResultEtlProcessor implements Processor<BasCheck, StandardChec
                         result = result.replaceAll("TI-RADS[分|级|类]*\\d?[:：，,-]?[6|Ⅵ]B[分级类灶]+", "TI-RADS6B级");
                         result = result.replaceAll("TI-RADS[分|级|类]*\\d?[:：，,-]?[6|Ⅵ]C[分级类灶]+", "TI-RADS6C级");
                         List<String> levelListTi = ReUtil.findAll(EtlConst.TI_REGX_LEVEL, result, 0);
-                        StandardCheckRecord pcr1 = new StandardCheckRecord();
+                        StandardMnCheckRecord pcr1 = new StandardMnCheckRecord();
                         pcr1.setItemName(EtlConst.RADSLEVEL);
                         pcr1.setItemNameComn(EtlConst.RADSLEVEL);
-                        pcr1.setInitResult(EtlConst.INIT_RESULT_1);
-                        pcr1.setClassName(check.getClassName());
+                        pcr1.setItemFt(check.getItemFt());
                         pcr1.setVid(check.getVid());
                         pcr1.setCleanTime(new Date());
                         pcr1.setCleanStatus(1);
-                        pcr1.setImageDiagnose(check.getImageDiagnose());
-                        pcr1.setImageDescribe(check.getItemResults());
-                        pcr1.setOrgId(EtlSTConst.orgId);
-                        pcr1.setStoreId(EtlSTConst.storeId);
+                        pcr1.setImageDescribe(check.getResults());
+
                         pcr1.setResultsDiscrete(2);
                         if (levelListTi != null && !levelListTi.isEmpty()) {
                             levelListTi.sort((x1, x2) -> x1.compareTo(x2));
                             String s = levelListTi.get(levelListTi.size() - 1);
                             s = s.replace("TI-RADS", "").replace("级", "").replace("类", "").trim();
-                            pcr1.setItemResults(s);
+                            pcr1.setResults(s);
                             temp.add(pcr1);
                         }
                     }
                 }
-                result = check.getItemResults().replaceAll(EtlConst.REGX_LEVEL, "**********");
+                result = check.getResults().replaceAll(EtlConst.REGX_LEVEL, "**********");
                 //取出优先级最高的那句话
                 String str = "";
                 int level = 0;
@@ -448,62 +405,48 @@ public class CheckResultEtlProcessor implements Processor<BasCheck, StandardChec
                     }
                     //超声类型
                     if (StrUtil.isNotBlank(str3)) {
-                        StandardCheckRecord pcr1 = new StandardCheckRecord();
+                        StandardMnCheckRecord pcr1 = new StandardMnCheckRecord();
                         pcr1.setItemName(EtlConst.CHAOSHENGTEXING);
                         pcr1.setItemNameComn(EtlConst.CHAOSHENGTEXING);
                         pcr1.setVid(check.getVid());
-                        pcr1.setClassName(check.getClassName());
-                        pcr1.setInitResult(EtlConst.INIT_RESULT_1);
+                        pcr1.setItemFt(check.getItemFt());
                         pcr1.setCleanTime(new Date());
-                        pcr1.setItemResults(str3);
+                        pcr1.setResults(str3);
                         pcr1.setCleanStatus(1);
-                        pcr1.setImageDiagnose(check.getImageDiagnose());
-                        pcr1.setImageDescribe(check.getItemResults());
-                        pcr1.setOrgId(EtlSTConst.orgId);
-                        pcr1.setStoreId(EtlSTConst.storeId);
+                        pcr1.setImageDescribe(check.getResults());
                         pcr1.setResultsDiscrete(2);
                         temp.add(pcr1);
                     }
                     //结节类型
                     if (StrUtil.isNotBlank(str4)) {
-                        StandardCheckRecord pcr2 = new StandardCheckRecord();
+                        StandardMnCheckRecord pcr2 = new StandardMnCheckRecord();
                         pcr2.setItemName(EtlConst.JIEJIELEIXING);
                         pcr2.setItemNameComn(EtlConst.JIEJIELEIXING);
                         pcr2.setVid(check.getVid());
-                        pcr2.setClassName(check.getClassName());
-                        pcr2.setInitResult(EtlConst.INIT_RESULT_1);
+                        pcr2.setItemFt(check.getItemFt());
                         pcr2.setCleanTime(new Date());
-                        pcr2.setItemResults(str4);
+                        pcr2.setResults(str4);
                         pcr2.setCleanStatus(1);
-                        pcr2.setImageDiagnose(check.getImageDiagnose());
-                        pcr2.setImageDescribe(check.getItemResults());
-                        pcr2.setOrgId(EtlSTConst.orgId);
-                        pcr2.setStoreId(EtlSTConst.storeId);
+                        pcr2.setImageDescribe(check.getResults());
                         pcr2.setResultsDiscrete(2);
                         temp.add(pcr2);
                     }
                     //最大结节直径
                     if (StrUtil.isNotBlank(str5)) {
-                        StandardCheckRecord pcr3 = new StandardCheckRecord();
+                        StandardMnCheckRecord pcr3 = new StandardMnCheckRecord();
                         pcr3.setItemName(EtlConst.ZHIJING);
-                        pcr3.setItemNameComn(EtlConst.JIEJIELEIXING);
+                        pcr3.setItemNameComn(EtlConst.ZHIJING);
                         pcr3.setVid(check.getVid());
-                        pcr3.setClassName(check.getClassName());
-                        pcr3.setInitResult(EtlConst.INIT_RESULT_1);
+                        pcr3.setItemFt(check.getItemFt());
                         pcr3.setCleanTime(new Date());
-                        pcr3.setItemResults(str5);
+                        pcr3.setResults(str5);
                         pcr3.setCleanStatus(1);
-                        pcr3.setOrgId(EtlSTConst.orgId);
-                        pcr3.setStoreId(EtlSTConst.storeId);
-                        pcr3.setImageDiagnose(check.getImageDiagnose());
-                        pcr3.setImageDescribe(check.getItemResults());
+                        pcr3.setImageDescribe(check.getResults());
                         pcr3.setResultsDiscrete(2);
                         if (str.contains("cm") || str.contains("CM") || str.contains("Cm") || str.contains("cM")) {
-                            pcr3.setItemUnit("cm");
-                            pcr3.setUnitComm("cm");
+                            pcr3.setUnit("cm");
                         } else if (str.contains("mm") || str.contains("MM") || str.contains("Mm") || str.contains("mM")) {
-                            pcr3.setItemUnit("mm");
-                            pcr3.setUnitComm("mm");
+                            pcr3.setUnit("mm");
                         }
                         temp.add(pcr3);
                     }
@@ -514,7 +457,7 @@ public class CheckResultEtlProcessor implements Processor<BasCheck, StandardChec
             }
         }
         if (results.contains(EtlConst.FEI_KEY) || results.contains(EtlConst.XIONG_KEY) || results.contains(EtlConst.QI_KEY)) {
-            String result = check.getItemResults();
+            String result = check.getResults();
             if (StrUtil.isNotBlank(result)) {
                 result = result.replace(" ", "");
                 result = result.toUpperCase();
@@ -543,36 +486,32 @@ public class CheckResultEtlProcessor implements Processor<BasCheck, StandardChec
                 result = result.replaceAll("(TI|LU)-RADS[分|级|类]*\\d?[:：，,-]?[6|Ⅵ]B[分级类灶]+", "LU-RADS6B级");
                 result = result.replaceAll("(TI|LU)-RADS[分|级|类]*\\d?[:：，,-]?[6|Ⅵ]C[分级类灶]+", "LU-RADS6C级");
                 List<String> levelListTi = ReUtil.findAll(EtlConst.LU_REGX_LEVEL, result, 0);
-                StandardCheckRecord pcr1 = new StandardCheckRecord();
+                StandardMnCheckRecord pcr1 = new StandardMnCheckRecord();
                 pcr1.setItemName(EtlConst.LU_RADSLEVEL);
                 pcr1.setItemNameComn(EtlConst.LU_RADSLEVEL);
-                pcr1.setInitResult(EtlConst.INIT_RESULT_FEI);
-                pcr1.setClassName(check.getClassName());
+                pcr1.setItemFt(check.getItemFt());
                 pcr1.setVid(check.getVid());
                 pcr1.setCleanTime(new Date());
                 pcr1.setCleanStatus(1);
-                pcr1.setImageDiagnose(check.getImageDiagnose());
-                pcr1.setImageDescribe(check.getItemResults());
-                pcr1.setOrgId(EtlSTConst.orgId);
-                pcr1.setStoreId(EtlSTConst.storeId);
+                pcr1.setImageDescribe(check.getResults());
                 pcr1.setResultsDiscrete(2);
                 if (levelListTi != null && !levelListTi.isEmpty()) {
                     levelListTi.sort((x1, x2) -> x1.compareTo(x2));
                     String s = levelListTi.get(levelListTi.size() - 1);
                     s = s.replace("LU-RADS", "").replace("级", "").replace("类", "").trim();
-                    pcr1.setItemResults(s);
+                    pcr1.setResults(s);
                     temp.add(pcr1);
                 }
             }
             String resultFei = results.replaceAll(EtlConst.KH_REGX, "");
-            check.setItemResults(resultFei);
-            List<StandardCheckRecord> records = new ArrayList<>();
-            //EtlFeiUtils.etl(check, records);
+            check.setResults(resultFei);
+            List<StandardMnCheckRecord> records = new ArrayList<>();
+            EtlFeiUtils.etl(check, records);
             temp.addAll(records);
         }
         //乳腺结节
-        if (check.getItemResults().contains(EtlConst.RU_KEY)) {
-            String result = check.getItemResults() == null ? "" : check.getItemResults();
+        if (check.getResults().contains(EtlConst.RU_KEY)) {
+            String result = check.getResults() == null ? "" : check.getResults();
             result = result.replace(" ", "");
             result = result.toUpperCase();
             result = result.replaceAll("BI-RADS[分|级|类]*\\d?[:：，,-]?[1|Ⅰ][分级类灶]+", "BI-RADS1级");
@@ -610,16 +549,13 @@ public class CheckResultEtlProcessor implements Processor<BasCheck, StandardChec
             if (levelList != null && !levelList.isEmpty()) {
                 levelList.sort(Comparator.naturalOrder());
                 String s = levelList.get(levelList.size() - 1);
-                StandardCheckRecord pcr1 = new StandardCheckRecord();
+                StandardMnCheckRecord pcr1 = new StandardMnCheckRecord();
                 pcr1.setItemName(EtlConst.BI_RADSLEVEL);
                 pcr1.setItemNameComn(EtlConst.BI_RADSLEVEL);
-                pcr1.setInitResult(EtlConst.INIT_RESULT_2);
                 pcr1.setCleanStatus(1);
-                pcr1.setOrgId(EtlSTConst.orgId);
-                pcr1.setStoreId(EtlSTConst.storeId);
                 pcr1.setResultsDiscrete(2);
                 pcr1.setVid(check.getVid());
-                pcr1.setItemResults(s.replace("BI-RADS", "").replace("级", "").replace("类", "").trim());
+                pcr1.setResults(s.replace("BI-RADS", "").replace("级", "").replace("类", "").trim());
                 temp.add(pcr1);
             }
             //在描述里面，乳腺结节处理
@@ -658,36 +594,29 @@ public class CheckResultEtlProcessor implements Processor<BasCheck, StandardChec
                 }
             }
             if (flag2) {
-                StandardCheckRecord pcr3 = new StandardCheckRecord();
+                StandardMnCheckRecord pcr3 = new StandardMnCheckRecord();
                 pcr3.setItemName(EtlConst.INIT_RESULT_RU);
                 pcr3.setItemNameComn(EtlConst.INIT_RESULT_RU);
-                pcr3.setInitResult(EtlConst.INIT_RESULT_2);
                 pcr3.setCleanStatus(1);
-                pcr3.setItemResults("1");
+                pcr3.setResults("1");
                 pcr3.setResultsDiscrete(2);
                 pcr3.setVid(check.getVid());
-                pcr3.setOrgId(EtlSTConst.orgId);
-                pcr3.setStoreId(EtlSTConst.storeId);
                 temp.add(pcr3);
             }
         }
-        StandardCheckRecord pcr1 = new StandardCheckRecord();
+        StandardMnCheckRecord pcr1 = new StandardMnCheckRecord();
         pcr1.setItemName(check.getItemName());
-        pcr1.setItemResults(check.getItemResults());
-        pcr1.setItemUnit(check.getItemUnit());
+        pcr1.setResults(check.getResults());
+        pcr1.setUnit(check.getUnit());
         pcr1.setVid(check.getVid());
         pcr1.setCleanTime(new Date());
-        pcr1.setClassName(check.getClassName());
-        pcr1.setItemResults("0");
-        pcr1.setImageDescribe(check.getItemResults());
-        pcr1.setImageDiagnose(check.getImageDiagnose());
-        pcr1.setItemNameComn(check.getItemNameComn());
-        pcr1.setOrgId(EtlSTConst.orgId);
-        pcr1.setStoreId(EtlSTConst.storeId);
+        pcr1.setItemFt(check.getItemFt());
+        pcr1.setResults("0");
+        pcr1.setImageDescribe(check.getResults());
         pcr1.setResultsDiscrete(0);
 
         if (temp.isEmpty()) {
-            String result = check.getItemResults();
+            String result = check.getResults();
             boolean flagA = false;
             boolean flagB = false;
             boolean flagC = false;

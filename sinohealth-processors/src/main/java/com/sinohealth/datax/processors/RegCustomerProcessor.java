@@ -8,6 +8,8 @@ import cn.hutool.json.JSONUtil;
 import com.sinohealth.datax.common.CommonData;
 import com.sinohealth.datax.common.Processor;
 import com.sinohealth.datax.entity.source.BasCustomer;
+import com.sinohealth.datax.entity.source.BasMnCustomer;
+import com.sinohealth.datax.entity.source.RegMnCustomer;
 import com.sinohealth.datax.entity.source.StandardCustomerRecord;
 import com.sinohealth.datax.entity.zktarget.StandardCustomerRecordList;
 import com.sinohealth.datax.utils.EtlSTConst;
@@ -23,57 +25,28 @@ import java.util.Date;
  * @date 2022/08/29
  * 获取用户基本信息
  **/
-public class RegCustomerProcessor implements Processor<BasCustomer, StandardCustomerRecordList> {
+public class RegCustomerProcessor implements Processor<BasMnCustomer, StandardCustomerRecordList> {
 
     Logger logger = LoggerFactory.getLogger(RegCustomerProcessor.class);
     @Override
-    public StandardCustomerRecordList dataProcess(BasCustomer customer, StandardCustomerRecordList list, CommonData commonData) {
-        ArrayList<StandardCustomerRecord> listRecord = new ArrayList<>();
-        StandardCustomerRecord standardCustomerRecord = new StandardCustomerRecord();
-        standardCustomerRecord.setCleanTime(new Date());
-        standardCustomerRecord.setVid(customer.getMemberId());
+    public StandardCustomerRecordList dataProcess(BasMnCustomer customer, StandardCustomerRecordList list, CommonData commonData) {
+        ArrayList<RegMnCustomer> listRecord = new ArrayList<>();
+        RegMnCustomer standardCustomerRecord = new RegMnCustomer();
+        standardCustomerRecord.setVid(customer.getVid());
         standardCustomerRecord.setName(customer.getName());
-        standardCustomerRecord.setCustomerSfzh(customer.getSfzh());
-        standardCustomerRecord.setAddress(customer.getAddress());
-        standardCustomerRecord.setMaritalStatus(customer.getMaritalStatus());
-        standardCustomerRecord.setNation(customer.getNation());
-        standardCustomerRecord.setReportTime(customer.getReportTime());
-        standardCustomerRecord.setStoreId(EtlSTConst.storeId);
-        standardCustomerRecord.setOrgId(EtlSTConst.orgId);
-        standardCustomerRecord.setPackageName(customer.getPackageName());
-        standardCustomerRecord.setPackagePrice(customer.getPackagePrice());
-        standardCustomerRecord.setIsGroup(customer.getIsGroup());
+        standardCustomerRecord.setAge(customer.getAge());
+        standardCustomerRecord.setBirthDate(customer.getBirthDate());
+        standardCustomerRecord.setBookTime(customer.getBookTime());
+        standardCustomerRecord.setIdCard(customer.getIdCard());
+        standardCustomerRecord.setSex(customer.getSex());
+        standardCustomerRecord.setShopNo(customer.getShopNo());
         StringBuilder str = new StringBuilder();
         try {
-            if (customer.getCheckTime() != null) {
-                standardCustomerRecord.setApplyTime(customer.getCheckTime());
-            }else {
-                standardCustomerRecord.setApplyTime(null);
-                str.append("体检日期为空。");
-            }
-            String tel = customer.getTel();
-            if (StrUtil.isNotEmpty(tel)) {
-                standardCustomerRecord.setMobile(tel);
-            } else {
-                str.append("手机号码为空或者 无效。");
-            }
-            String sfzh = customer.getSfzh();
-            if (customer.getBirthday() != null) {
-                standardCustomerRecord.setCustomerCsrq(customer.getBirthday());
-            } else if (StrUtil.isNotBlank(sfzh)) {
-                boolean validCard = IdcardUtil.isValidCard(sfzh);
-                if (validCard) {
-                    DateTime birthDate = IdcardUtil.getBirthDate(sfzh);
-                    standardCustomerRecord.setCustomerCsrq(birthDate);
-                }
-            } else {
-                str.append("出生日期为空。");
-            }
-            if (standardCustomerRecord.getCustomerCsrq() != null && standardCustomerRecord.getApplyTime() != null) {
+            if (standardCustomerRecord.getBirthDate() != null && standardCustomerRecord.getBookTime() != null) {
                 try {
-                    long age = DateUtil.betweenYear(standardCustomerRecord.getCustomerCsrq()
-                            , standardCustomerRecord.getApplyTime(), true);
-                    standardCustomerRecord.setAge(String.valueOf(age));
+                    long age = DateUtil.betweenYear(standardCustomerRecord.getBirthDate()
+                            , standardCustomerRecord.getBookTime(), true);
+                    standardCustomerRecord.setAge(Integer.valueOf((int) age));
                     if (age < 0 || age > 120) {
                         str.append("年龄范围异常。");
                     }
@@ -81,30 +54,7 @@ public class RegCustomerProcessor implements Processor<BasCustomer, StandardCust
                     str.append("年龄计数异常。");
                 }
             }
-            String sexStr = customer.getSex();
-            if (StrUtil.isNotBlank(sexStr)) {
-                sexStr = sexStr.trim();
-                if ("男".equals(sexStr)) {
-                    standardCustomerRecord.setSex("1");
-                } else if ("女".equals(sexStr)) {
-                    standardCustomerRecord.setSex("0");
-                } else if ("1".equals(sexStr)) {
-                    standardCustomerRecord.setSex("1");
-                } else if ("0".equals(sexStr)) {
-                    standardCustomerRecord.setSex("0");
-                } else {
-                    str.append("性别异常。");
-                }
-            } else {
-                str.append("性别异常。");
-            }
-            String remark = str.toString();
-            if (StrUtil.isNotBlank(remark)) {
-                standardCustomerRecord.setRemark(remark);
-                standardCustomerRecord.setCleanStatus(1);
-            } else {
-                standardCustomerRecord.setCleanStatus(1);
-            }
+            standardCustomerRecord.setStatus(1);
         } catch (Exception e) {
             logger.error("用户数据清洗异常,用户入参数据【{}】，异常【{}】", JSONUtil.toJsonStr(customer), e.getMessage(), e);
         }
