@@ -1,5 +1,5 @@
 {
-    "name": "sinohealthmysqlwriter",
+    "name": "sinohealthhivewriter",
     "parameter": {
         "username": "",
         "password": "",
